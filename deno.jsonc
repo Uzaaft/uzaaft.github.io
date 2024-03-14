@@ -2,5 +2,6 @@
   "tasks": {
     "dev": "deno run --allow-net --allow-read --allow-env --watch main.ts --dev",
     "serve": "deno run --allow-net --allow-read --no-check main.ts",
+    "generate:pdf": "pandoc --output=cv/resume.pdf --metadata pagetitle='...' --template=cv/template.tex cv/cv.md"
   }
 }
