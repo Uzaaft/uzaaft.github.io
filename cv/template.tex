@@ -1,0 +1,167 @@
+\documentclass[letterpaper,10pt]{article}
+\usepackage{xifthen}
+\usepackage[colorlinks=true,urlcolor=Black]{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{titlesec}
+\usepackage[margin=.25in]{geometry}
+\usepackage{titling}
+\usepackage{fontawesome}
+\usepackage{enumitem}
+\renewcommand\labelitemi{-}
+
+\author{$name$}
+
+\renewcommand{\maketitle}{\par{\centering{\Huge  \textsc{\theauthor}}\par}}
+
+\renewcommand{\familydefault}{\sfdefault}
+\renewcommand{\sfdefault}{ppl}
+
+\newcommand{\entry}[4]{\ifthenelse{\isempty{#4}}
+{\slimentry{#1}{#2}}
+{\ifthenelse{\isempty{#1}}
+{\centering{\begin{minipage}[t]{.95\textwidth}
+{\bf#2}\ifthenelse{\isempty{#3}}{}{\\\textit{#3}.}
+
+\parbox{.99\linewidth}{\footnotesize{#4}}
+\end{minipage}}\\
+\vspace{.1cm}}
+{\begin{minipage}[t]{.12\textwidth}
+\raggedleft{}
+\hfill \textsc{#1}
+\end{minipage}
+\hfill\vline\hfill
+\begin{minipage}[t]{.83\textwidth}
+{\bf#2}\ifthenelse{\isempty{#3}}{}{\\\textit{#3}.}
+
+\parbox{.96\linewidth}{\footnotesize{#4}}
+\end{minipage}\\
+\vspace{.1cm}}}}
+
+\newcommand{\slimentry}[2]{\ifthenelse{\isempty{#1}}
+{#2}
+{\begin{minipage}[t]{.12\textwidth}
+\hfill \textsc{#1}
+\end{minipage}
+\hfill\vline\hfill
+\begin{minipage}[t]{.83\textwidth}
+#2
+\end{minipage}\\}
+\vspace{.1cm}}
+
+\titleformat{\section}{\Large\scshape\raggedright}{}{1em}{}[\titlerule]
+\titlespacing{\section}{0pt}{3pt}{7pt}
+\titleformat{\subsection}{\large\sc\centering}{}{0em}{\underline}
+\titlespacing{\subsection}{0pt}{7pt}{7pt}
+
+\setlength{\parindent}{0in}
+\setlength{\parindent}{0in}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{.2 cm}
+\moveleft.5\hoffset\centerline{\
+  %address
+  {\faMapMarker} $location$ \hspace{2 mm}
+  %phone
+  {\faMobile} $phone$  \hspace{2 mm}
+  %email
+  {\faEnvelopeO} \href{mailto:}{$email$} \hspace{2 mm}
+  %website
+  % {\faGlobe} \href{http://$url$}{$url$}\hspace{3 mm}
+  %gitlab
+  {\faGithubAlt} \href{http://$git.url$$if(git.user)$/$git.user$$endif$}{$git.url$$if(git.user)$/$git.user$$endif$}
+}
+
+\vspace{.1cm}
+
+$if(skill)$
+\section{Languages \& Skills}
+\centering{\
+\entry{}
+{$for(skill)$$for(skill.line)$$skill.line$$sep$ \textbullet\ $endfor$\\ $endfor$}
+{}
+{}
+}
+$endif$
+
+\entry{}
+{$for(language)$$language$$sep$, $endfor$}
+{}
+{}
+
+$if(education)$
+\section{Education}
+
+$for(education)$
+\entry{$education.start$ \--- $education.end$}
+{$education.degree$}
+{$education.school$, $education.location$}
+{\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
+$for(education.notes)$\item $education.notes$$sep$ $endfor$
+\end{itemize}}
+
+$endfor$
+$endif$
+
+$if(experience)$
+\section{Professional Experience}
+
+$for(experience)$
+$for(experience.position)$
+\entry{$experience.position.start$ \--- $experience.position.end$}
+{$experience.position.company$ \--- $experience.position.title$}
+{$experience.position.location$}
+{\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
+$for(experience.position.notes)$\item $experience.position.notes$$sep$ $endfor$
+\end{itemize}}
+
+$endfor$
+$endfor$
+$endif$
+
+$if(project)$
+\section{Projects}
+
+$for(project)$
+\entry{}
+{$project.name$}
+{$project.type$}
+{\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
+$for(project.notes)$\item $project.notes$$sep$ $endfor$
+\end{itemize}}
+
+$endfor$
+$endif$
+
+$if(open-source)$
+\section{Open Source Involvement}
+
+$for(open-source)$
+\entry{}
+{$open-source.type$}
+{}
+{\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
+$for(open-source.entries)$\item \textbf{$open-source.entries.repo$} \--- \href{$open-source.entries.url$}{$open-source.entries.url$} $sep$ $endfor$
+\end{itemize}}
+$endfor$
+
+$endif$
+
+$if(community)$
+\section{Community Involvement}
+
+$for(community)$
+\entry{$community.start$ \--- $community.end$}
+{$community.name$}
+{$community.place$}
+{\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
+$for(community.notes)$\item $community.notes$$sep$ $endfor$
+\end{itemize}}
+$endfor$
+$endif$
+
+\end{document}
