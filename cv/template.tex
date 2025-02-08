@@ -126,10 +126,10 @@ $endif$
 $if(project)$
 \section{Projects}
 
-$for(project)$
+$for(projects)$
 \entry{}
 {$project.name$}
-{$project.type$}
+{$project.role$}
 {\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
 $for(project.notes)$\item $project.notes$$sep$ $endfor$
 \end{itemize}}
