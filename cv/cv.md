@@ -3,25 +3,24 @@
 name: Muhammad Uzair Aftab
 location: Fetsund, Norge
 phone: +47 412 72 901
-email: uzair@polmath.no
+email: uzaaft@outlook.com
 <!-- url: mehalter.com -->
 git:
   user: uzaaft
   url: github.com
 
 #=== DESCRIPTIONS ===#
-tagline: "a developer, and educator"
+# tagline: "A developer, and educator"
 
-summary: "lorem"
+# summary: "lorem"
 #=== SKILLS ===#
 skill:
   - line:
       - Docker
-      - Digital ocean
-      - AWS
+      - Digital ocean, AWS
       - Git
       - High Performance Computing
-      - PostgreSQL
+      - PostgreSQL, SQLite
 
 language:
   - Rust
@@ -55,16 +54,41 @@ education:
   
 #=== WORK EXPERIENCE ===#
 experience:
-  - company: Co-Founder at Polymath
+  - company: NMBU - Norwegian university of life sciences
+    position:
+      - title: Head Engineer
+        company: NMBU - Norwegian university of life sciences
+        start: Mar&nbsp;2023
+        end: Feb&nbsp;2025
+        id: nmbu
+        location: Ås, Norway
+        notes:
+          -	Maintained a low-threshold innovation hub, ensuring accessibility for students.
+          -	Led student mentoring and recruitment for Eik Lab, fostering collaboration with industry professionals..
+          -	Managed daily operations and provided training on essential infrastructure, including the electronics workshop and Rapid Prototype Lab.
+          -	Planned workshops, and hackathons with The Government Pension Fund of Norway and other industry partners.
+          -	Guided student projects and supported startups in their technical development.
+  - company: Polymath
     position:
       - title: Founder
         company: Polymath AS
         start: Mar&nbsp;2023
         end: Present
-        id: boeing
+        id: pmath
         location: Ås, Norway
         notes:
           - Founded Polymath AS in 2023, focusing on efficient full-stack application development with Rust, and TypeScript.
+  - company: Stormwater
+    position:
+      - title: Founder
+        company: Stormwater
+        start: Sept&nbsp;2024
+        end: Present
+        id: swai
+        location: Oslo, Norway
+        notes:
+          - Founded Stormwater in 2024 after getting the STUD-ENT grant from Innovation Norway, aiming to digitalize and streamline the engineering work required to account for stormwater.
+          - Led the technical development, overseeing and coordinating the collaboration between the software developers and the internal stormwater engineer.
   - company: Co-founder at Njord Technologies AS
     position:
       - title: Founder
