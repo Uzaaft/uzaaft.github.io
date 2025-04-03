@@ -54,6 +54,37 @@ education:
   
 #=== WORK EXPERIENCE ===#
 experience:
+  - company: Disruptive Engineering
+    position:
+      - title: Software developer
+        company: Disruptive Engineering
+        start: April&nbsp;2025
+        end: PRESENT
+        id: deng
+        location: Hybrid
+        notes:
+          -	Software developer at Disruptive Engineering, a leading Norwegian technology company specializing in propertiary solutions for data capture and analysis of travel patterns.
+  - company: Stormwater
+    position:
+      - title: Founder
+        company: Stormwater
+        start: Sept&nbsp;2024
+        end: Present
+        id: swai
+        location: Oslo, Norway
+        notes:
+          - Founded Stormwater in 2024 after getting the STUD-ENT grant from Innovation Norway, aiming to digitalize and streamline the engineering work required to account for stormwater.
+          - Led the technical development, overseeing and coordinating the collaboration between the software developers and the internal stormwater engineer.
+  - company: Polymath
+    position:
+      - title: Founder
+        company: Polymath AS
+        start: Mar&nbsp;2023
+        end: Present
+        id: pmath
+        location: Ås, Norway
+        notes:
+          - Founded Polymath AS in 2023, focusing on efficient full-stack and desktop application development with Rust, and TypeScript.
   - company: NMBU - Norwegian university of life sciences
     position:
       - title: Head Engineer
@@ -68,27 +99,6 @@ experience:
           -	Managed daily operations and provided training on essential infrastructure, including the electronics workshop and Rapid Prototype Lab.
           -	Planned workshops, and hackathons with The Government Pension Fund of Norway and other industry partners.
           -	Guided student projects and supported startups in their technical development.
-  - company: Polymath
-    position:
-      - title: Founder
-        company: Polymath AS
-        start: Mar&nbsp;2023
-        end: Present
-        id: pmath
-        location: Ås, Norway
-        notes:
-          - Founded Polymath AS in 2023, focusing on efficient full-stack application development with Rust, and TypeScript.
-  - company: Stormwater
-    position:
-      - title: Founder
-        company: Stormwater
-        start: Sept&nbsp;2024
-        end: Present
-        id: swai
-        location: Oslo, Norway
-        notes:
-          - Founded Stormwater in 2024 after getting the STUD-ENT grant from Innovation Norway, aiming to digitalize and streamline the engineering work required to account for stormwater.
-          - Led the technical development, overseeing and coordinating the collaboration between the software developers and the internal stormwater engineer.
   - company: Co-founder at Njord Technologies AS
     position:
       - title: Founder
@@ -148,18 +158,4 @@ community:
       - "Took on software development projects with industry partners with the goal to attain hands-on experience outside of the curriculum."
       - "Held workshops within the field of machine learning, and mentored students interested in fullstack and backend development."
       - "Spearheaded the creation of the Eik Lab mentors to improve the experience for new students at Eik Lab."
-#- start: Aug&nbsp;2015
-#  end:     May&nbsp;2017
-#  name:    TEDxGeorgiaTech
-#  place: Georgia Institute of Technology and TED
-#  notes:
-#        - "Organized an official TEDx university even with a group of students at Georgia Tech"
-#        - "Designed all of the visuals for the conference, including rewriting the event website TEDxGeorgiaTech.com"
-#- start: Aug&nbsp;2013
-#  end:     Jun&nbsp;2015
-#  name:    Research Triangle Google Development Group
-#  place: Google
-#  notes:
-#        - "Competed in various hack-a-thon events hosted by Google and won the Android Wear hack-a-thon"
-#        - "Participated in code labs wth the group to explore technologies like Dart language and AngularJS"
 ---
