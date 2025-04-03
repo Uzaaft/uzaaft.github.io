@@ -30,16 +30,15 @@ language:
   - HTML
   - CSS
   - SQL
-  - PGSQL
   - Python
 
-about-me: "lorem Imsum"
+# about-me: "lorem Imsum"
 
-description:
-  sys-admin: "Lorem"
-  database-admin: "lorem"
-  developer: "lorem"
-  researcher: "lorem"
+# description:
+#   sys-admin: "Lorem"
+#   database-admin: "lorem"
+#   developer: "lorem"
+#   researcher: "lorem"
 
 #=== EDUCATION ===#
 education:
@@ -91,7 +90,7 @@ experience:
         company: NMBU - Norwegian university of life sciences
         start: Mar&nbsp;2023
         end: Feb&nbsp;2025
-        id: nmbu
+        id: nmbu-1
         location: Ås, Norway
         notes:
           -	Maintained a low-threshold innovation hub, ensuring accessibility for students.
@@ -104,8 +103,8 @@ experience:
       - title: Founder
         company: Njord Technologies AS
         start: Jan&nbsp;2021
-        end: Mars&nbsp;2023
-        id: boeing
+        end: April&nbsp;2025
+        id: njord
         location: Ås, Norway
         notes:
           - Co-founded and managed Njord Technologies from 2021 to 2023 with Aleksander Eriksen, focusing on full-stack application development primarily in TypeScript.
