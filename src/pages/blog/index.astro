@@ -1,0 +1,33 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+const posts = (await getCollection("blog"))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<Layout title="Blog – Uzair Aftab">
+  <div class="max-w-3xl mx-auto px-6 py-16 md:py-24">
+    <div class="mb-10">
+      <p class="eyebrow mb-3">Writing</p>
+      <h1 class="page-title">Blog</h1>
+    </div>
+
+    <div class="space-y-4">
+      {posts.map((post) => (
+        <a href={`/blog/${post.id}`} class="card block group no-underline hover:border-accent/40 transition-colors">
+          <div class="flex items-baseline justify-between gap-4">
+            <span class="text-text group-hover:text-accent transition-colors font-medium">{post.data.title}</span>
+            <span class="text-xs text-text-3 font-mono shrink-0">
+              {post.data.pubDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </span>
+          </div>
+          {post.data.description && (
+            <p class="text-sm text-text-2 mt-2">{post.data.description}</p>
+          )}
+        </a>
+      ))}
+    </div>
+  </div>
+</Layout>

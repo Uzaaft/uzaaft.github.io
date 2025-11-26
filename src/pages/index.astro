@@ -1,16 +1,153 @@
 ---
-
+import Layout from "../layouts/Layout.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Uzair Aftab – Software Engineer">
+  <div class="relative">
+    <div
+      class="pointer-events-none absolute inset-x-0 -top-40 -z-10 h-[420px]
+             bg-[radial-gradient(circle_at_top,_#22c55e33,_transparent_60%)]"
+    ></div>
+
+    <div class="max-w-3xl mx-auto px-6 py-16 md:py-24 space-y-16">
+      <section class="space-y-6">
+        <p class="eyebrow">Software engineer · Oslo</p>
+
+        <h1 class="page-title">
+          Hi, I'm Uzair Aftab.
+        </h1>
+
+        <p class="text-base md:text-lg text-text-2 max-w-xl">
+          I build software at <a href="https://polymath.no">Polymath</a> and
+          maintain open source tools for developers. I'm especially interested in
+          AI, algorithms, and improving developer workflows.
+        </p>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+          <span class="badge-pill">
+            <span class="dot"></span>
+            Currently at <span class="font-medium">Polymath</span>
+          </span>
+          <span class="badge-pill">
+            Core maintainer · <span class="font-medium">astrocommunity</span>
+          </span>
+          <span class="badge-pill">
+            Interests · AI, algorithms, dev tooling
+          </span>
+        </div>
+
+        <div class="flex flex-wrap gap-3 pt-4">
+          <a href="/blog" class="btn-primary">
+            Read the blog
+          </a>
+          <a
+            href="https://github.com/Uzaaft"
+            class="btn-ghost"
+          >
+            View GitHub
+          </a>
+        </div>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="section-title">Focus</h2>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-1">Backend & performance</h3>
+            <p class="text-sm text-text-2">
+              Building fast, reliable systems with Rust. Obsessed with low latency and efficient resource usage.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-1">Developer tooling</h3>
+            <p class="text-sm text-text-2">
+              Improving editor setups, workflows, and infrastructure for fast feedback loops.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-1">AI & algorithms</h3>
+            <p class="text-sm text-text-2">
+              Applying ML and algorithmic thinking to automate and enhance workflows.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="space-y-6">
+        <h2 class="section-title">Open source</h2>
+
+        <div class="card card-accent">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="eyebrow mb-2">Core maintainer</p>
+              <h3 class="text-lg font-semibold mb-2">
+                astrocommunity · AstroNvim plugins
+              </h3>
+              <p class="text-sm text-text-2 mb-3">
+                Community plugin repository for AstroNvim (1.6k+ stars). I review PRs,
+                mentor contributors, and help guide the project's direction.
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <span class="badge-soft">Lua</span>
+                <span class="badge-soft">Neovim</span>
+                <span class="badge-soft">Developer tooling</span>
+              </div>
+            </div>
+            <a
+              href="https://github.com/AstroNvim/astrocommunity"
+              class="inline-flex items-center text-sm text-text-2 hover:text-text shrink-0"
+            >
+              View repo
+              <span class="ml-1 text-xs">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-1">Homebrew</h3>
+            <p class="text-sm text-text-2">
+              Contributions to the package manager that powers development environments
+              on macOS and Linux.
+            </p>
+          </div>
+          <div class="card">
+            <h3 class="text-sm font-semibold mb-1">Dotfiles</h3>
+            <p class="text-sm text-text-2">
+              Curated development environment and editor configuration for fast, repeatable setups.
+            </p>
+            <a
+              href="https://github.com/Uzaaft/dotfiles"
+              class="inline-flex items-center mt-2 text-xs text-text-2 hover:text-text"
+            >
+              View config
+              <span class="ml-1 text-[10px]">↗</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="section-title">Education</h2>
+        <div class="card">
+          <h3 class="text-sm font-semibold mb-1">NMBU</h3>
+          <p class="text-sm text-text-2">Norwegian University of Life Sciences</p>
+        </div>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="section-title">Connect</h2>
+        <div class="flex flex-wrap gap-3">
+          <a href="https://github.com/Uzaaft" class="btn-ghost">
+            GitHub
+          </a>
+          <a href="https://www.linkedin.com/in/uzaaft" class="btn-ghost">
+            LinkedIn
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</Layout>

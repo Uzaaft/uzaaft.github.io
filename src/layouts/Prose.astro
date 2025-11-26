@@ -1,0 +1,88 @@
+---
+import Layout from "./Layout.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  date?: Date;
+}
+
+const { title, description, date } = Astro.props;
+---
+
+<Layout title={title} description={description}>
+  <article class="max-w-2xl mx-auto px-5 py-16">
+    <header class="mb-10">
+      {date && (
+        <time class="text-sm text-text-3 font-mono">
+          {date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+        </time>
+      )}
+      <h1 class="text-2xl font-semibold mt-1 text-text">{title}</h1>
+      {description && <p class="text-text-2 mt-3">{description}</p>}
+    </header>
+    
+    <div class="prose">
+      <slot />
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .prose {
+    color: var(--color-text-2);
+  }
+
+  .prose :global(h2) {
+    color: var(--color-text);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .prose :global(h3) {
+    color: var(--color-text);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose :global(p) {
+    margin-bottom: 1.25rem;
+  }
+
+  .prose :global(ul),
+  .prose :global(ol) {
+    margin-bottom: 1.25rem;
+    padding-left: 1.5rem;
+  }
+
+  .prose :global(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  .prose :global(li::marker) {
+    color: var(--color-text-3);
+  }
+
+  .prose :global(blockquote) {
+    border-left: 2px solid var(--color-accent);
+    padding-left: 1rem;
+    color: var(--color-text-3);
+    font-style: italic;
+    margin: 1.5rem 0;
+  }
+
+  .prose :global(strong) {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 2.5rem 0;
+  }
+</style>

@@ -1,0 +1,19 @@
+---
+const links = [
+  { href: "https://github.com/Uzaaft", label: "GitHub" },
+  { href: "https://www.linkedin.com/in/uzaaft", label: "LinkedIn" },
+];
+---
+
+<footer class="border-t border-border mt-auto">
+  <div class="max-w-2xl mx-auto px-5 py-8 flex items-center justify-between text-sm text-text-3">
+    <span>© {new Date().getFullYear()}</span>
+    <div class="flex gap-6">
+      {links.map((link) => (
+        <a href={link.href} target="_blank" rel="noopener" class="text-text-3 hover:text-text no-underline">
+          {link.label}
+        </a>
+      ))}
+    </div>
+  </div>
+</footer>
