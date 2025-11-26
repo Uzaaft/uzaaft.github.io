@@ -27,7 +27,7 @@
           src = ./.;
           lockfile = ./pnpm-lock.yaml;
           fetcherVersion = 2;
-          hash = "sha256-PjHxlpHr1OxB3BKV7jhIyWSTzojlsjvzFTYEHg/+nB4=";
+          hash = "sha256-VdACcGvyYpp5hg2xJZLZBciBiYK4wjQ/qIPVkpMMSjo=";
         };
 
         buildPhase = "pnpm build";
