@@ -7,7 +7,7 @@ const posts = (await getCollection("blog"))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
-<Layout title="Blog – Uzair Aftab">
+<Layout title="Blog – Uzair Aftab" description="Thoughts on software engineering, open source, and developer tooling.">
   <div class="max-w-3xl mx-auto px-6 py-16 md:py-24">
     <div class="mb-10">
       <p class="text-[11px] uppercase tracking-[0.24em] text-text-3 mb-3">Writing</p>
