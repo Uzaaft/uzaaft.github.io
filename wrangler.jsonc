@@ -1,6 +1,7 @@
 {
   "name": "uzair-me",
   "compatibility_date": "2025-11-26",
+  "main": "src/worker.ts",
   "routes": [
     {
       "pattern": "uzaaft.me",
