@@ -1,5 +1,6 @@
 {
   "name": "uzair-me",
+  "main": "src/worker.ts",
   "compatibility_date": "2025-11-26",
   "routes": [
     {
@@ -8,6 +9,7 @@
     }
   ],
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "not_found_handling": "404-page"
   }
 }
