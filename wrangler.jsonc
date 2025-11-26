@@ -1,6 +1,12 @@
 {
   "name": "uzair-me",
   "compatibility_date": "2025-11-26",
+  "routes": [
+    {
+      "pattern": "uzaaft.me",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./dist"
   }
