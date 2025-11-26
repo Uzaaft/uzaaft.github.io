@@ -1,18 +1,27 @@
 {
   "name": "blog",
   "type": "module",
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@10.23.0",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "astro": "astro",
     "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "cf-typegen": "wrangler types",
+    "deploy": "astro build && wrangler deploy",
+    "dev": "astro dev",
+    "preview": "astro build && wrangler dev"
+  },
+  "devDependencies": {
+		"@types/node": "^24.10.1",
+    "wrangler": "^4.50.0"
   },
   "dependencies": {
     "@astrojs/markdoc": "^0.15.9",
+    "@astrojs/rss": "^4.0.14",
+    "@astrojs/sitemap": "^3.6.0",
     "@tailwindcss/vite": "^4.1.17",
-    "astro": "^5.16.0",
+    "astro": "^5.16.1",
     "tailwindcss": "^4.1.17"
-  }
+  },
+  "type": "module"
 }
