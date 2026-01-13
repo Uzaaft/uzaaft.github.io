@@ -1,19 +1,41 @@
 ---
-const links = [
-  { href: "https://github.com/Uzaaft", label: "GitHub" },
-  { href: "https://www.linkedin.com/in/uzaaft", label: "LinkedIn" },
-];
+const year = new Date().getFullYear();
 ---
 
-<footer class="border-t border-border mt-auto">
-  <div class="max-w-2xl mx-auto px-5 py-8 flex items-center justify-between text-sm text-text-3">
-    <span>© {new Date().getFullYear()}</span>
-    <div class="flex gap-6">
-      {links.map((link) => (
-        <a href={link.href} target="_blank" rel="noopener" class="text-text-3 hover:text-text no-underline">
-          {link.label}
-        </a>
-      ))}
-    </div>
+<footer>
+  <span>© {year} Uzair Aftab</span>
+  <div class="links">
+    <a href="https://github.com/Uzaaft">GitHub</a>
+    <a href="https://www.linkedin.com/in/uzaaft">LinkedIn</a>
   </div>
 </footer>
+
+<style>
+  footer {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #86868b;
+    gap: 1rem;
+  }
+
+  .links {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .links a {
+    color: #86868b;
+    text-decoration: none;
+  }
+
+  .links a:hover {
+    color: #1d1d1f;
+  }
+
+  :global([data-theme="dark"]) .links a:hover { color: #f5f5f7; }
+</style>

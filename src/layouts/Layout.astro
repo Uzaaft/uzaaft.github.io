@@ -21,7 +21,6 @@ const { title, description, image = "/bobr.gif" } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
 
-    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
@@ -29,11 +28,21 @@ const { title, description, image = "/bobr.gif" } = Astro.props;
     <meta property="og:site_name" content="Uzair Aftab" />
     {image && <meta property="og:image" content={new URL(image, Astro.url)} />}
   </head>
-  <body class="min-h-screen flex flex-col bg-bg">
+  <body>
     <Header />
-    <main class="flex-1">
-      <slot />
-    </main>
+    <main><slot /></main>
     <Footer />
   </body>
 </html>
+
+<style>
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1;
+  }
+</style>

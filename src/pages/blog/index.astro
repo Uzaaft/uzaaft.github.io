@@ -8,26 +8,84 @@ const posts = (await getCollection("blog"))
 ---
 
 <Layout title="Blog – Uzair Aftab" description="Thoughts on software engineering, open source, and developer tooling.">
-  <div class="max-w-3xl mx-auto px-6 py-16 md:py-24">
-    <div class="mb-10">
-      <p class="text-[11px] uppercase tracking-[0.24em] text-text-3 mb-3">Writing</p>
-      <h1 class="page-title">Blog</h1>
-    </div>
+  <section class="blog">
+    <h1>Blog</h1>
 
-    <div class="space-y-4">
-      {posts.map((post) => (
-        <a href={`/blog/${post.id}`} class="card block group no-underline hover:border-accent/40 transition-colors">
-          <div class="flex items-baseline justify-between gap-4">
-            <span class="text-text group-hover:text-accent transition-colors font-medium">{post.data.title}</span>
-            <span class="text-xs text-text-3 font-mono shrink-0">
-              {post.data.pubDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+    {posts.length === 0 ? (
+      <p class="empty">No posts yet.</p>
+    ) : (
+      <div class="posts">
+        {posts.map((post) => (
+          <a href={`/blog/${post.id}`} class="post">
+            <span class="title">{post.data.title}</span>
+            <span class="date">
+              {post.data.pubDate.toLocaleDateString("en-US", { 
+                month: "short", 
+                day: "numeric", 
+                year: "numeric" 
+              })}
             </span>
-          </div>
-          {post.data.description && (
-            <p class="text-sm text-text-2 mt-2">{post.data.description}</p>
-          )}
-        </a>
-      ))}
-    </div>
-  </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </section>
 </Layout>
+
+<style>
+  .blog {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 5rem 1.5rem 6rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  .empty {
+    text-align: center;
+    color: #6e6e73;
+  }
+
+  .posts {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .post {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    text-decoration: none;
+  }
+
+  .post:first-child {
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .title {
+    font-weight: 500;
+    color: #1d1d1f;
+  }
+
+  .post:hover .title {
+    color: #0071e3;
+  }
+
+  .date {
+    font-size: 0.8125rem;
+    color: #86868b;
+    flex-shrink: 0;
+  }
+
+  :global([data-theme="dark"]) .post { border-color: rgba(255,255,255,0.08); }
+  :global([data-theme="dark"]) .title { color: #f5f5f7; }
+</style>
