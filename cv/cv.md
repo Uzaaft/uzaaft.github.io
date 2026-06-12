@@ -154,11 +154,12 @@ projects:
       - "Core maintainer for Astrocommunity, a community-driven Neovim plugin ecosystem in **Lua**, with 1.5k stars."
 
 open-source:
-  - type: "Lead Core Maintainer"
+  - type: "Selected Open Source Work"
     id: "maintainer"
     entries:
       - repo: "Astrocommunity"
         url: "https://github.com/AstroNvim/Astrocommunity"
+        role: "Lead Core Maintainer"
       - repo: "libghostty-rs"
         url: "https://github.com/Uzaaft/libghostty-rs"
         role: "Co-maintainer"
