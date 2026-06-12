@@ -159,6 +159,8 @@ open-source:
     entries:
       - repo: "Astrocommunity"
         url: "https://github.com/AstroNvim/Astrocommunity"
+      - repo: "libghostty-rs"
+        url: "https://github.com/Uzaaft/libghostty-rs"
 
 #=== COMMUNITY INVOLVEMENT ===#
 community:
