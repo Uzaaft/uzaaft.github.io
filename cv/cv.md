@@ -95,8 +95,8 @@ experience:
           - Founded Polymath AS as a software consultancy focused on full-stack product development, Rust systems programming, desktop applications, and technical prototyping.
           - Led delivery of LawAI 3.0 for LawAI AS from concept to production in six months.
           - Led a four-person technical team across frontend, backend, and AI/ML while serving as primary backend developer.
-          - Shipped to 200 customer organizations, including a union with more than 1M members.
-          - "Technologies used: Rust, TypeScript, Next.js, Python, FastAPI, PostgreSQL, Azure, Cloudflare, SSO, RBAC, identity management, and desktop application development."
+          - Shipped to 200 customer organizations, including a union serving more than 1M members.
+          - "Technologies used: Rust, TypeScript, Next.js, Python, FastAPI, PostgreSQL, Azure, Cloudflare, SSO, RBAC, and desktop application development."
   - company: NMBU - Norwegian University of Life Sciences
     position:
       - title: Head Engineer
