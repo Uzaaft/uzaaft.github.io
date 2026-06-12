@@ -161,6 +161,8 @@ open-source:
         url: "https://github.com/AstroNvim/Astrocommunity"
       - repo: "libghostty-rs"
         url: "https://github.com/Uzaaft/libghostty-rs"
+        role: "Co-maintainer"
+        note: "Rust bindings for libghostty."
 
 #=== COMMUNITY INVOLVEMENT ===#
 community:
