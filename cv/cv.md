@@ -114,6 +114,7 @@ experience:
         location: Ås, Norway
         notes:
           - Co-founded Njord Technologies, delivering full-stack TypeScript applications for client and product development.
+          - "Technologies used: TypeScript, Next.js, PostgreSQL, and full-stack web development."
   - company: Norwegian University of Life Sciences
     position:
       - title: Lecturer and Teaching Assistant
@@ -126,6 +127,7 @@ experience:
           - Lecturer and Teaching Assistant for the subjects TEL100, TIN100, and TIN200.
           - "Developed video lecture materials during COVID-19 for Arduino, IoT, Python, and Streamlit."
           - Held lectures and supported student project work in Arduino, IoT, embedded systems, and high-fidelity prototyping.
+          - "Topics taught: Arduino, IoT, Python, Streamlit, embedded systems, and prototyping."
   - company: Ledo AS
     position:
       - title: Software Developer
