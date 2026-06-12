@@ -110,8 +110,8 @@ experience:
         id: njord
         location: Ås, Norway
         notes:
-          - Co-founded and managed Njord Technologies from 2021 to 2023 with Aleksander Eriksen, focusing on full-stack application development primarily in TypeScript.
-  - company: Lecturer and Teaching Assistant at NMBU
+          - Co-founded Njord Technologies, delivering full-stack TypeScript applications for client and product development.
+  - company: Norwegian University of Life Sciences
     position:
       - title: Lecturer and Teaching Assistant
         company: Norwegian University of Life Sciences
@@ -123,7 +123,7 @@ experience:
           - Lecturer and Teaching Assistant for the subjects TEL100, TIN100, and TIN200.
           - "Developed teaching materials in the form of video lectures during COVID-19 for Arduino, IoT, Python and Streamlit"
           - Held lectures and aided students with project work within Arduino, IoT, Embedded systems, and High fidelity prototyping.
-  - company: Software Developer at Ledo AS
+  - company: Ledo AS
     position:
       - title: Software Developer
         company: Ledo AS
