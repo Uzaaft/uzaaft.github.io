@@ -6,7 +6,7 @@
 \usepackage{titlesec}
 \usepackage[margin=.25in]{geometry}
 \usepackage{titling}
-\usepackage{fontawesome}
+\usepackage{fontawesome5}
 \usepackage{enumitem}
 \renewcommand\labelitemi{-}
 
@@ -65,17 +65,17 @@
 \vspace{.2 cm}
 \moveleft.5\hoffset\centerline{\
   %address
-  {\faMapMarker} $location$ \hspace{2 mm}
+  \faIcon{map-marker-alt} $location$ \hspace{2 mm}
   %phone
-  {\faMobile} $phone$  \hspace{2 mm}
+  \faIcon{mobile-alt} $phone$  \hspace{2 mm}
   %email
-  {\faEnvelopeO} \href{mailto:}{$email$} \hspace{2 mm}
+  \faIcon[regular]{envelope} \href{mailto:}{$email$} \hspace{2 mm}
   %website
   % {\faGlobe} \href{http://$url$}{$url$}\hspace{3 mm}
   %gitlab
-  {\faGithubAlt} \href{http://$git.url$$if(git.user)$/$git.user$$endif$}{$git.url$$if(git.user)$/$git.user$$endif$} \hspace{2 mm}
+  \faIcon[brands]{github-alt} \href{http://$git.url$$if(git.user)$/$git.user$$endif$}{$git.url$$if(git.user)$/$git.user$$endif$} \hspace{2 mm}
   %linkedin
-  \href{http://$linkedin.url$$if(linkedin.user)$/$linkedin.user$$endif$}{$linkedin.url$$if(linkedin.user)$/$linkedin.user$$endif$}
+  \faIcon[brands]{linkedin} \href{http://$linkedin.url$$if(linkedin.user)$/$linkedin.user$$endif$}{$linkedin.url$$if(linkedin.user)$/$linkedin.user$$endif$}
 }
 
 \vspace{.1cm}
