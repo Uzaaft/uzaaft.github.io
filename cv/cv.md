@@ -86,7 +86,7 @@ experience:
         id: pmath
         location: Ås, Norway
         notes:
-          - Founded Polymath AS in 2023, focusing on efficient full-stack and desktop application development with Rust, and TypeScript.
+          - Founded Polymath AS as a software consultancy focused on full-stack product development, Rust systems programming, desktop applications, and technical prototyping.
   - company: NMBU - Norwegian university of life sciences
     position:
       - title: Head Engineer
