@@ -76,7 +76,7 @@ experience:
         location: Oslo, Norway
         notes:
           - Founded Stormwater after receiving Innovation Norway’s STUD-ENT grant, leading development of software that digitalizes stormwater engineering analysis and planning workflows.
-          - Led the technical development, overseeing and coordinating the collaboration between the software developers and the internal stormwater engineer.
+          - Led technical development, coordinating software developers and domain engineers to translate stormwater engineering requirements into development priorities.
   - company: Polymath
     position:
       - title: Founder
