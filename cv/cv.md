@@ -56,16 +56,16 @@ education:
   
 #=== WORK EXPERIENCE ===#
 experience:
-  - company: Disruptive Engineering
+  - company: Veira
     position:
       - title: Software developer
-        company: Disruptive Engineering
+        company: Veira, formerly Disruptive Engineering
         start: April&nbsp;2025
         end: PRESENT
         id: deng
         location: Hybrid
         notes:
-          - Software developer at Disruptive Engineering, a leading Norwegian technology company specializing in proprietary solutions for data capture and analysis of travel patterns.
+          - Develop software for Veira’s real-time travel-pattern data platform, working on privacy-preserving systems for mobility and transport insights.
   - company: Stormwater
     position:
       - title: Founder
