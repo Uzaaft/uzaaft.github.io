@@ -4,7 +4,7 @@ name: Muhammad Uzair Aftab
 location: Fetsund, Norge
 phone: +47 412 72 901
 email: uzaaft@outlook.com
-<!-- url: mehalter.com -->
+url: uzaaft.me
 git:
   user: uzaaft
   url: github.com
