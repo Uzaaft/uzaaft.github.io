@@ -66,6 +66,7 @@ experience:
         location: Hybrid
         notes:
           - Develop software for Veira’s real-time travel-pattern data platform, working on privacy-preserving systems for mobility and transport insights.
+          - "Technologies used: TypeScript, Next.js, Rust, Python, PostgreSQL, geospatial data, and real-time data processing."
   - company: Stormwater
     position:
       - title: Founder
@@ -77,6 +78,7 @@ experience:
         notes:
           - Founded Stormwater after receiving Innovation Norway’s STUD-ENT grant, leading development of software that digitalizes stormwater engineering analysis and planning workflows.
           - Led technical development, coordinating software developers and domain engineers to translate stormwater engineering requirements into development priorities.
+          - "Technologies used: TypeScript, Rust, PostgreSQL, geospatial data, and hydrological analysis."
   - company: Polymath
     position:
       - title: Founder
@@ -87,6 +89,7 @@ experience:
         location: Ås, Norway
         notes:
           - Founded Polymath AS as a software consultancy focused on full-stack product development, Rust systems programming, desktop applications, and technical prototyping.
+          - "Technologies used: Rust, TypeScript, Next.js, Python, FastAPI, PostgreSQL, Azure, Cloudflare, and desktop application development."
   - company: NMBU - Norwegian University of Life Sciences
     position:
       - title: Head Engineer
