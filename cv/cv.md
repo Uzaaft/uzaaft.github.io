@@ -60,29 +60,6 @@ education:
   
 #=== WORK EXPERIENCE ===#
 experience:
-  - company: Veira
-    position:
-      - title: Software developer
-        company: Veira, formerly Disruptive Engineering
-        start: April&nbsp;2025
-        end: PRESENT
-        id: deng
-        location: Hybrid
-        notes:
-          - Develop software for Veira’s real-time travel-pattern data platform, working on privacy-preserving systems for mobility and transport insights.
-          - "Technologies used: TypeScript, Next.js, Rust, Python, PostgreSQL, geospatial data, and real-time data processing."
-  - company: Stormwater
-    position:
-      - title: Founder
-        company: Stormwater
-        start: Sept&nbsp;2024
-        end: Present
-        id: swai
-        location: Oslo, Norway
-        notes:
-          - Founded Stormwater after receiving Innovation Norway’s STUD-ENT grant, leading development of software that digitalizes stormwater engineering analysis and planning workflows.
-          - Led technical development, coordinating software developers and domain engineers to translate stormwater engineering requirements into development priorities.
-          - "Technologies used: TypeScript, Rust, PostgreSQL, geospatial data, and hydrological analysis."
   - company: Polymath
     position:
       - title: Founder
@@ -97,6 +74,29 @@ experience:
           - Led a four-person technical team across frontend, backend, and AI/ML while serving as primary backend developer.
           - Shipped to 200 customer organizations, including a union serving more than 1M members.
           - "Technologies used: Rust, TypeScript, Next.js, Python, FastAPI, PostgreSQL, Azure, Cloudflare, SSO, RBAC, and desktop application development."
+  - company: Stormwater
+    position:
+      - title: Founder
+        company: Stormwater
+        start: Sept&nbsp;2024
+        end: March&nbsp;2026
+        id: swai
+        location: Oslo, Norway
+        notes:
+          - Founded Stormwater after receiving Innovation Norway’s STUD-ENT grant, leading development of software that digitalizes stormwater engineering analysis and planning workflows.
+          - Led technical development, coordinating software developers and domain engineers to translate stormwater engineering requirements into development priorities.
+          - "Technologies used: TypeScript, Rust, PostgreSQL, geospatial data, and hydrological analysis."
+  - company: Veira
+    position:
+      - title: Software developer
+        company: Veira, formerly Disruptive Engineering
+        start: April&nbsp;2025
+        end: April&nbsp;2026
+        id: deng
+        location: Hybrid
+        notes:
+          - Develop software for Veira’s real-time travel-pattern data platform, working on privacy-preserving systems for mobility and transport insights.
+          - "Technologies used: TypeScript, Next.js, Rust, Python, PostgreSQL, geospatial data, and real-time data processing."
   - company: NMBU - Norwegian University of Life Sciences
     position:
       - title: Head Engineer
