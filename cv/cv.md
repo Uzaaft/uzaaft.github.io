@@ -8,6 +8,9 @@ email: uzaaft@outlook.com
 git:
   user: uzaaft
   url: github.com
+linkedin:
+  user: uzaaft
+  url: linkedin.com/in
 
 #=== DESCRIPTIONS ===#
 # tagline: "A developer, and educator"
