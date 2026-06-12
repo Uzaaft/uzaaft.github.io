@@ -20,7 +20,8 @@ summary: "Software engineer focused on building reliable and fast software produ
 skill:
   - line:
       - Docker
-      - DigitalOcean, AWS
+      - Cloud infrastructure: DigitalOcean, AWS, Azure, Cloudflare
+      - FastAPI
       - Git
       - High Performance Computing
       - PostgreSQL, SQLite
@@ -104,6 +105,7 @@ experience:
           - Trained students on Eik Lab’s electronics workshop, Rapid Prototype Lab, and prototyping equipment.
           - Planned workshops and hackathons with the Government Pension Fund of Norway and other industry partners.
           - Guided student projects and supported early-stage startups with technical development.
+          - Provided technical leadership for student projects, startup teams, and industry collaborations across Eik Lab.
   - company: Njord Technologies AS
     position:
       - title: Co-founder
