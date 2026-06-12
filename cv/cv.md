@@ -75,7 +75,7 @@ experience:
         id: swai
         location: Oslo, Norway
         notes:
-          - Founded Stormwater in 2024 after getting the STUD-ENT grant from Innovation Norway, aiming to digitalize and streamline the engineering work required to account for stormwater.
+          - Founded Stormwater after receiving Innovation Norway’s STUD-ENT grant, leading development of software that digitalizes stormwater engineering analysis and planning workflows.
           - Led the technical development, overseeing and coordinating the collaboration between the software developers and the internal stormwater engineer.
   - company: Polymath
     position:
