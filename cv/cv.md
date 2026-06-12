@@ -12,7 +12,7 @@ git:
 #=== DESCRIPTIONS ===#
 # tagline: "A developer, and educator"
 
-# summary: "lorem"
+summary: "Software engineer focused on building reliable and fast software products. I work across Rust, TypeScript, web applications, backend systems, data workflows, and developer tooling, with experience leading technical development in startups, open source, and industry."
 #=== SKILLS ===#
 skill:
   - line:
