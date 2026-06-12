@@ -70,10 +70,10 @@ experience:
         location: Ås, Norway
         notes:
           - Founded Polymath AS as a software consultancy focused on full-stack product development, Rust systems programming, desktop applications, and technical prototyping.
-          - Led delivery of LawAI 3.0 for LawAI AS from concept to production in six months.
-          - Led a four-person technical team across frontend, backend, and AI/ML while serving as primary backend developer.
-          - Shipped to 200 customer organizations, including a union serving more than 1M members.
-          - "Technologies used: Rust, TypeScript, Next.js, Python, FastAPI, PostgreSQL, Azure, Cloudflare, SSO, RBAC, and desktop application development."
+          - "**LawAI AS — LawAI 3.0:** led delivery from concept to production in six months; led a four-person technical team across frontend, backend, and AI/ML while serving as primary backend developer; shipped to 200 customer organizations, including a union serving more than 1M members."
+          - "**LawAI AS technologies:** Rust, TypeScript, Next.js, Python, FastAPI, PostgreSQL, Azure, Cloudflare, SSO, and RBAC."
+          - "**Fluenta — FIA:** built Flare Installation Assessment Software, a desktop application for internal engineering and sales workflows."
+          - "**Fluenta technologies:** Rust, TypeScript, Next.js, and Tauri."
   - company: Stormwater
     position:
       - title: Founder
