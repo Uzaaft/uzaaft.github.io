@@ -121,8 +121,8 @@ experience:
         location: Ås, Norway
         notes:
           - Lecturer and Teaching Assistant for the subjects TEL100, TIN100, and TIN200.
-          - "Developed teaching materials in the form of video lectures during COVID-19 for Arduino, IoT, Python and Streamlit"
-          - Held lectures and aided students with project work within Arduino, IoT, Embedded systems, and High fidelity prototyping.
+          - "Developed video lecture materials during COVID-19 for Arduino, IoT, Python, and Streamlit."
+          - Held lectures and supported student project work in Arduino, IoT, embedded systems, and high-fidelity prototyping.
   - company: Ledo AS
     position:
       - title: Software Developer
@@ -132,7 +132,7 @@ experience:
         id: uf
         location: Ås, Norway
         notes:
-          - "Planned and executed a technical feasibility study within the field of aqua culture and computer vision."
+          - "Planned and executed a technical feasibility study in aquaculture and computer vision."
 
 #=== PROJECTS ===#
 projects:
