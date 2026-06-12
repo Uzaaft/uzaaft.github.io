@@ -87,10 +87,10 @@ experience:
         location: Ås, Norway
         notes:
           - Founded Polymath AS as a software consultancy focused on full-stack product development, Rust systems programming, desktop applications, and technical prototyping.
-  - company: NMBU - Norwegian university of life sciences
+  - company: NMBU - Norwegian University of Life Sciences
     position:
       - title: Head Engineer
-        company: NMBU - Norwegian university of life sciences
+        company: NMBU - Norwegian University of Life Sciences
         start: Mar&nbsp;2023
         end: Feb&nbsp;2025
         id: nmbu-1
