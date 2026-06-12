@@ -98,7 +98,7 @@ experience:
         notes:
           - Led daily operations for Eik Lab, an accessible student innovation hub for prototyping, mentoring, and industry collaboration.
           - Led student mentoring and recruitment for Eik Lab, connecting student projects with industry partners and technical advisors.
-          - Managed daily operations and provided training on essential infrastructure, including the electronics workshop and Rapid Prototype Lab.
+          - Trained students on Eik Lab’s electronics workshop, Rapid Prototype Lab, and prototyping equipment.
           - Planned workshops, and hackathons with The Government Pension Fund of Norway and other industry partners.
           - Guided student projects and supported startups in their technical development.
   - company: Co-founder at Njord Technologies AS
