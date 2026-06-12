@@ -72,9 +72,9 @@ experience:
           - Founded Polymath AS as a software consultancy focused on full-stack product development, Rust systems programming, desktop applications, and technical prototyping.
           - "**LawAI AS — LawAI 3.0:** led delivery from concept to production in six months; led a four-person technical team across frontend, backend, and AI/ML while serving as primary backend developer; shipped to 200 customer organizations, including a union serving more than 1M members."
           - "**LawAI AS technologies:** Rust, TypeScript, Next.js, Python, FastAPI, PostgreSQL, Azure, Cloudflare, SSO, and RBAC."
-          - "**Industrial client — engineering sales tool:** built a desktop application to streamline sales in a domain where physical constraints determine product feasibility."
-          - "**Industrial client — RFQ tooling:** built a sales tool to reduce lead times when extracting customer requests for quotations."
-          - "**Industrial client technologies:** Rust, TypeScript, Next.js, and Tauri."
+          - "**Fluenta — engineering sales tool:** built a desktop application to streamline sales in a domain where physical constraints determine product feasibility."
+          - "**Fluenta — quotation tooling:** built a sales tool to reduce lead times when extracting customer requests for quotations."
+          - "**Fluenta technologies:** Rust, TypeScript, Next.js, and Tauri."
   - company: Stormwater
     position:
       - title: Founder
