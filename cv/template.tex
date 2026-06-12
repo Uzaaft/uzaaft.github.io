@@ -102,20 +102,6 @@ $endif$
 {}
 {}
 
-$if(education)$
-\section{Education}
-
-$for(education)$
-\entry{$education.start$ \--- $education.end$}
-{$education.degree$}
-{$education.school$, $education.location$}
-{\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
-$for(education.notes)$\item $education.notes$$sep$ $endfor$
-\end{itemize}}
-
-$endfor$
-$endif$
-
 $if(experience)$
 \section{Professional Experience}
 
@@ -132,15 +118,15 @@ $endfor$
 $endfor$
 $endif$
 
-$if(project)$
-\section{Projects}
+$if(projects)$
+\section{Selected Projects}
 
 $for(projects)$
 \entry{}
-{$project.name$}
-{$project.role$}
+{$projects.name$}
+{$projects.role$}
 {\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
-$for(project.notes)$\item $project.notes$$sep$ $endfor$
+$for(projects.notes)$\item $projects.notes$$sep$ $endfor$
 \end{itemize}}
 
 $endfor$
@@ -172,5 +158,20 @@ $for(community.notes)$\item $community.notes$$sep$ $endfor$
 \end{itemize}}
 $endfor$
 $endif$
+
+$if(education)$
+\section{Education}
+
+$for(education)$
+\entry{$education.start$ \--- $education.end$}
+{$education.degree$}
+{$education.school$, $education.location$}
+{\begin{itemize}[leftmargin=*,topsep=0pt,noitemsep,labelsep=.3em]
+$for(education.notes)$\item $education.notes$$sep$ $endfor$
+\end{itemize}}
+
+$endfor$
+$endif$
+
 
 \end{document}
