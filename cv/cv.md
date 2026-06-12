@@ -96,7 +96,7 @@ experience:
         id: nmbu-1
         location: Ås, Norway
         notes:
-          - Led daily operations for Eik Lab, an accessible student innovation hub for prototyping, mentoring, and industry collaboration.
+          - Led daily operations for Eik Lab, an accessible student innovation hub for hands-on prototyping and entrepreneurship.
           - Led student mentoring and recruitment for Eik Lab, connecting student projects with industry partners and technical advisors.
           - Trained students on Eik Lab’s electronics workshop, Rapid Prototype Lab, and prototyping equipment.
           - Planned workshops and hackathons with the Government Pension Fund of Norway and other industry partners.
