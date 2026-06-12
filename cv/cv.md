@@ -141,10 +141,10 @@ projects:
     role: Software Developer
     logo: images/astronvim.svg
     notes:
-      - "Core maintainer for a powerful community drive Neovim plugin ecosystem in **Lua**, with >800 stars"
+      - "Core maintainer for Astrocommunity, a community-driven Neovim plugin ecosystem in **Lua**, with 1.5k stars."
 
 open-source:
-  - type: "Core Maintainer"
+  - type: "Lead Core Maintainer"
     id: "maintainer"
     entries:
       - repo: "Astrocommunity"
