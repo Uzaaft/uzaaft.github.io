@@ -101,9 +101,9 @@ experience:
           - Trained students on Eik Lab’s electronics workshop, Rapid Prototype Lab, and prototyping equipment.
           - Planned workshops and hackathons with the Government Pension Fund of Norway and other industry partners.
           - Guided student projects and supported early-stage startups with technical development.
-  - company: Co-founder at Njord Technologies AS
+  - company: Njord Technologies AS
     position:
-      - title: Founder
+      - title: Co-founder
         company: Njord Technologies AS
         start: Jan&nbsp;2021
         end: April&nbsp;2025
