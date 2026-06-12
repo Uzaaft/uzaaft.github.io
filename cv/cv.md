@@ -25,6 +25,9 @@ skill:
       - Git
       - High Performance Computing
       - PostgreSQL, SQLite
+      - Technical leadership
+      - Software architecture
+      - Geospatial data
 
 language:
   - Rust
