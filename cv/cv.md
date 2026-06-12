@@ -17,16 +17,16 @@ git:
 skill:
   - line:
       - Docker
-      - Digital ocean, AWS
+      - DigitalOcean, AWS
       - Git
       - High Performance Computing
       - PostgreSQL, SQLite
 
 language:
   - Rust
-  - Typescript
+  - TypeScript
   - JavaScript
-  - Tailwindcss
+  - Tailwind CSS
   - HTML
   - CSS
   - SQL
@@ -62,7 +62,7 @@ experience:
         id: deng
         location: Hybrid
         notes:
-          -	Software developer at Disruptive Engineering, a leading Norwegian technology company specializing in propertiary solutions for data capture and analysis of travel patterns.
+          - Software developer at Disruptive Engineering, a leading Norwegian technology company specializing in proprietary solutions for data capture and analysis of travel patterns.
   - company: Stormwater
     position:
       - title: Founder
@@ -93,11 +93,11 @@ experience:
         id: nmbu-1
         location: Ås, Norway
         notes:
-          -	Maintained a low-threshold innovation hub, ensuring accessibility for students.
-          -	Led student mentoring and recruitment for Eik Lab, fostering collaboration with industry professionals..
-          -	Managed daily operations and provided training on essential infrastructure, including the electronics workshop and Rapid Prototype Lab.
-          -	Planned workshops, and hackathons with The Government Pension Fund of Norway and other industry partners.
-          -	Guided student projects and supported startups in their technical development.
+          - Maintained a low-threshold innovation hub, ensuring accessibility for students.
+          - Led student mentoring and recruitment for Eik Lab, fostering collaboration with industry professionals.
+          - Managed daily operations and provided training on essential infrastructure, including the electronics workshop and Rapid Prototype Lab.
+          - Planned workshops, and hackathons with The Government Pension Fund of Norway and other industry partners.
+          - Guided student projects and supported startups in their technical development.
   - company: Co-founder at Njord Technologies AS
     position:
       - title: Founder
