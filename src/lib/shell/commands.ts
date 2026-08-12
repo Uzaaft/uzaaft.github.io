@@ -59,6 +59,7 @@ const write = (state: ShellState, output: string): ShellResult => ({
 
 /** The neofetch card: beaver on the left, key/value rows on the right. */
 export function neofetch(): string {
+	const artWidth = Math.max(...BEAVER.map((line) => line.length));
 	const right: string[] = [
 		boldFg(Color.Yellow, host.user) + fg(Color.Dim, '@') + boldFg(Color.Yellow, host.machine),
 		fg(Color.Dim, '─'.repeat(30)),
@@ -73,7 +74,7 @@ export function neofetch(): string {
 	const out: string[] = [];
 
 	for (let i = 0; i < height; i++) {
-		const art = fg(Color.Magenta, pad(BEAVER[i] ?? '', 12) + '    ');
+		const art = fg(Color.Magenta, pad(BEAVER[i] ?? '', artWidth) + '    ');
 		out.push(art + (right[i] ?? ''));
 	}
 
