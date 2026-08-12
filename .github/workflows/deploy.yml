@@ -36,6 +36,10 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required to drop stale Nix store caches after a new one is written.
+      actions: write
     steps:
       - uses: actions/checkout@v5
 
@@ -44,9 +48,21 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
+      # Persist /nix across runs so a warm job substitutes ghostty-vt-wasm
+      # instead of paying for the Zig compile. Keyed on flake inputs and the
+      # pnpm lock (what the derivations hash); site source changes reuse the
+      # restored store and only rebuild the site.
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock', 'pnpm-lock.yaml') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
+
       # Builds libghostty-vt for wasm32-freestanding from the pinned ghostty
-      # revision, then the site around it. Reproducible, but cold runs pay for
-      # the Zig build.
+      # revision, then the site around it.
       - run: nix build .#default
 
       # `result` is a symlink into the read-only nix store; the Pages artifact
