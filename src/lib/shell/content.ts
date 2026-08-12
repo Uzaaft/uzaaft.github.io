@@ -94,10 +94,14 @@ export const now: readonly string[] = [
 	'· reviewing astrocommunity PRs on the tram'
 ];
 
-export const contactRows: readonly { readonly label: string; readonly value: string }[] = [
-	{ label: 'github', value: 'github.com/Uzaaft' },
-	{ label: 'linkedin', value: 'linkedin.com/in/uzaaft' },
-	{ label: 'email', value: 'hi@uzaaft.me' }
+export const contactRows: readonly {
+	readonly label: string;
+	readonly value: string;
+	readonly uri: string;
+}[] = [
+	{ label: 'github', value: 'github.com/Uzaaft', uri: urls.github },
+	{ label: 'linkedin', value: 'linkedin.com/in/uzaaft', uri: urls.linkedin },
+	{ label: 'email', value: 'hi@uzaaft.me', uri: urls.email }
 ];
 
 export const sayings = {

@@ -6,7 +6,7 @@
  * as an effect for the imperative shell to carry out.
  */
 
-import { bold, boldFg, Color, CRLF, fg, lines } from './ansi';
+import { bold, boldFg, Color, CRLF, fg, lines, link } from './ansi';
 import type { PreviousLogin } from './session';
 import {
 	about,
@@ -171,7 +171,9 @@ function listDirectory(cwd: string): string {
 
 function contact(): string {
 	return lines(
-		...contactRows.map((row) => fg(Color.Cyan, pad(row.label, 10)) + row.value),
+		...contactRows.map(
+			(row) => fg(Color.Cyan, pad(row.label, 10)) + link(row.uri, row.value)
+		),
 		'',
 		fg(Color.Dim, sayings.contactNote),
 		''
@@ -295,7 +297,11 @@ export function run(raw: string, state: ShellState): ShellResult {
 			}
 			return {
 				state,
-				effect: { kind: 'open', url, output: lines(fg(Color.Dim, `opening ${url} …`), '') }
+				effect: {
+					kind: 'open',
+					url,
+					output: lines(fg(Color.Dim, 'opening ') + link(url, url) + fg(Color.Dim, ' …'), '')
+				}
 			};
 		}
 

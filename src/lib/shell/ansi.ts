@@ -8,6 +8,7 @@
  */
 
 const ESC = '\x1b';
+const STRING_TERMINATOR = `${ESC}\\`;
 
 export const RESET = `${ESC}[0m`;
 
@@ -38,6 +39,10 @@ export const bold = (text: string): string => `${ESC}[1m${text}${RESET}`;
 
 export const italic = (text: string): string => `${ESC}[3m${text}${RESET}`;
 
+/** Wrap visible text in an OSC 8 hyperlink understood by modern terminals. */
+export const link = (uri: string, text: string): string =>
+	`${ESC}]8;;${uri}${STRING_TERMINATOR}${text}${ESC}]8;;${STRING_TERMINATOR}`;
+
 /** Bold + colored, the combination the prompt uses. */
 export const boldFg = (color: Color, text: string): string =>
 	`${ESC}[1;${color}m${text}${RESET}`;
@@ -67,12 +72,14 @@ export const CRLF = '\r\n';
 export const lines = (...items: readonly string[]): string => items.join(CRLF) + CRLF;
 
 /**
- * Strip escape sequences, leaving plain text.
+ * Strip CSI and OSC escape sequences, leaving plain text.
  *
  * Used to prerender a readable transcript for crawlers and no-JS visitors,
  * who never get the canvas. Only handles CSI sequences, which is all this
- * shell emits.
+ * shell emits, including OSC 8 hyperlinks.
  */
 export const stripAnsi = (text: string): string =>
 	// eslint-disable-next-line no-control-regex -- matching escape sequences is the point
-	text.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+	text
+		.replace(/\x1b\][\s\S]*?(?:\x07|\x1b\\)/g, '')
+		.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '');
