@@ -16,13 +16,16 @@ export const urls = {
 
 /** The beaver. Rendered to the left of the fetch card. */
 export const BEAVER: readonly string[] = [
-	'  (\\___/)',
-	' ( o   o )',
-	' (   v   )',
-	'  \\ |WW| /',
-	'  /|    |\\',
-	' ( |####| )',
-	'  \\______/'
+	'  _-----^__',
+	' (   `   ) \\_',
+	'  "-_        \\-____',
+	'    _\\__           \\_',
+	'   /,,____/          \\',
+	'       \\              \\',
+	'        |              |',
+	' __-----\\  \\          /\\ ',
+	'(=+=+=+__\\_/         /+;',
+	' ^---/,,______/==--^--^'
 ];
 
 export const fetchRows: readonly { readonly label: string; readonly value: string }[] = [
