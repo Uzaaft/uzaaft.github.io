@@ -10,7 +10,8 @@
 
 	let { snapshot, fallback, cellWidth, cellHeight }: Props = $props();
 
-	const cssColor = (color: Rgb): string => `rgb(${color.r} ${color.g} ${color.b})`;
+	const cssColor = (color: Rgb): string =>
+		`rgb(${color.r} ${color.g} ${color.b})`;
 
 	function runStyle(run: CellRun, grid: GridSnapshot): string {
 		const defaultForeground = cssColor(grid.foreground);
@@ -32,7 +33,11 @@
 
 	function safeHref(uri: string | null): string | null {
 		if (uri === null) return null;
-		if (uri.startsWith('/') || uri.startsWith('https://') || uri.startsWith('http://')) {
+		if (
+			uri.startsWith('/') ||
+			uri.startsWith('https://') ||
+			uri.startsWith('http://')
+		) {
 			return uri;
 		}
 		if (uri.startsWith('mailto:')) return uri;
@@ -46,10 +51,23 @@
 	data-terminal-transcript
 	role="region"
 	aria-label="Terminal transcript"
-	style:--cell-height={`${cellHeight}px`}
->
+	style:--cell-height={`${cellHeight}px`}>
 	{#if snapshot}
-		{#each snapshot.lines as row (row.y)}<span class="row" style:top={`${row.y * cellHeight}px`}>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href = safeHref(run.uri)}{#if href}<a class="run" style={runStyle(run, snapshot)} {href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noreferrer' : undefined}>{run.text}</a>{:else}<span class="run" style={runStyle(run, snapshot)}>{run.text}</span>{/if}{/each}</span>{'\n'}{/each}
+		{#each snapshot.lines as row (row.y)}<span
+				class="row"
+				style:top={`${row.y * cellHeight}px`}
+				>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href =
+						safeHref(run.uri)}{#if href}<a
+							class="run"
+							style={runStyle(run, snapshot)}
+							{href}
+							target={href.startsWith('http') ? '_blank' : undefined}
+							rel={href.startsWith('http') ? 'noreferrer' : undefined}
+							>{run.text}</a
+						>{:else}<span class="run" style={runStyle(run, snapshot)}
+							>{run.text}</span
+						>{/if}{/each}</span
+			>{'\n'}{/each}
 	{:else}
 		{fallback}
 	{/if}
@@ -64,7 +82,10 @@
 		margin: 0;
 		padding: 0;
 		overflow: hidden;
-		font: 13.5px/var(--cell-height) 'JetBrains Mono', ui-monospace, monospace;
+		font:
+			13.5px/var(--cell-height) 'JetBrains Mono',
+			ui-monospace,
+			monospace;
 		white-space: pre;
 		cursor: text;
 		user-select: text;

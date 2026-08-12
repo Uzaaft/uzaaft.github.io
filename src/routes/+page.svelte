@@ -27,8 +27,16 @@
 	import { VtTerminal, type GridSnapshot } from '$lib/vt/terminal';
 	import TerminalTranscript from '$lib/vt/terminal-transcript.svelte';
 
-	const FONT = { family: "'JetBrains Mono', ui-monospace, monospace", sizePx: 13.5, lineHeight: 1.6 };
-	const THEME: Theme = { foreground: '#c5c8c6', background: '#1d1f21', cursor: '#f0c674' };
+	const FONT = {
+		family: "'JetBrains Mono', ui-monospace, monospace",
+		sizePx: 13.5,
+		lineHeight: 1.6
+	};
+	const THEME: Theme = {
+		foreground: '#c5c8c6',
+		background: '#1d1f21',
+		cursor: '#f0c674'
+	};
 	const DRAG_THRESHOLD_PX = 4;
 
 	// Start the wasm fetch as soon as this module evaluates, in parallel with
@@ -53,7 +61,10 @@
 	let mirror = $state(untrack(() => data.transcript));
 	let snapshot = $state<GridSnapshot | null>(null);
 	let failure = $state<string | null>(null);
-	let announcement = $state<{ readonly id: number; readonly text: string } | null>(null);
+	let announcement = $state<{
+		readonly id: number;
+		readonly text: string;
+	} | null>(null);
 	/** Gates input and the chip bar until the live VT is ready. */
 	let interactive = $state(false);
 
@@ -128,7 +139,9 @@
 		}
 
 		const name = command.trim().split(/\s+/, 1)[0] || 'Command';
-		announce(`${name} completed. Output is available in the terminal transcript.`);
+		announce(
+			`${name} completed. Output is available in the terminal transcript.`
+		);
 	}
 
 	function submit(raw: string): void {
@@ -166,8 +179,12 @@
 		interactive = false;
 		write(ENTER_ALTERNATE_SCREEN + HIDE_CURSOR);
 
-		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		let left = reducedMotion ? Math.floor((gridCols - TRAIN_WIDTH) / 2) : gridCols;
+		const reducedMotion = window.matchMedia(
+			'(prefers-reduced-motion: reduce)'
+		).matches;
+		let left = reducedMotion
+			? Math.floor((gridCols - TRAIN_WIDTH) / 2)
+			: gridCols;
 		let trainFrame = 0;
 
 		const finish = (): void => {
@@ -286,9 +303,13 @@
 	function onPageKeyDown(event: KeyboardEvent): void {
 		if (!interactive || !inputEl || inputEl.disabled) return;
 		if (document.activeElement === inputEl) return;
-		if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+		if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey)
+			return;
 		if (event.key.length !== 1) return;
-		if (event.target instanceof Element && event.target.closest('a, button, input, textarea, select')) {
+		if (
+			event.target instanceof Element &&
+			event.target.closest('a, button, input, textarea, select')
+		) {
 			return;
 		}
 
@@ -350,7 +371,9 @@
 			// not fatal — the fallback still renders, just at a different pitch.
 			const [loaded] = await Promise.all([
 				wasmModule ?? VtModule.load(`${base}/ghostty-vt.wasm`),
-				document.fonts.load(`${FONT.sizePx}px ${FONT.family}`).catch(() => undefined)
+				document.fonts
+					.load(`${FONT.sizePx}px ${FONT.family}`)
+					.catch(() => undefined)
 			]);
 			if (loaded._tag === 'err') {
 				failure = loaded.error.message;
@@ -364,7 +387,11 @@
 				surfaceEl.getBoundingClientRect().height
 			);
 
-			const created = VtTerminal.create(loaded.value, initial.cols, initial.rows);
+			const created = VtTerminal.create(
+				loaded.value,
+				initial.cols,
+				initial.rows
+			);
 			if (created._tag === 'err') {
 				failure = created.error.message;
 				return;
@@ -456,17 +483,20 @@
 				{#key announcement.id}{announcement.text}{/key}
 			{/if}
 		</div>
-
 	</div>
 
 	<footer>
 		<span class="label">run:</span>
 		{#each CHIPS as chip (chip)}
-			<button onclick={() => runChip(chip)} disabled={!interactive}>{chip}</button>
+			<button onclick={() => runChip(chip)} disabled={!interactive}
+				>{chip}</button
+			>
 		{/each}
 		<div class="spacer"></div>
 		<a class="plain-link" href={`${base}/plain`}>plain page</a>
-		<span class="hint" id="terminal-hint">tab completes · ↑ history · ctrl-l clears</span>
+		<span class="hint" id="terminal-hint"
+			>tab completes · ↑ history · ctrl-l clears</span
+		>
 	</footer>
 </div>
 
@@ -574,7 +604,10 @@
 		background: transparent;
 		color: #c5c8c6;
 		caret-color: #f0c674;
-		font: 13.5px/1 'JetBrains Mono', ui-monospace, monospace;
+		font:
+			13.5px/1 'JetBrains Mono',
+			ui-monospace,
+			monospace;
 	}
 
 	.capture:disabled {
