@@ -26,8 +26,17 @@
 			`background:${resolvedBackground}`,
 			`font-weight:${run.bold ? 700 : 400}`,
 			`font-style:${run.italic ? 'italic' : 'normal'}`,
-			`text-decoration:${run.underline ? 'underline' : 'none'}`
+			`text-decoration:${run.underline || run.uri !== null ? 'underline' : 'none'}`
 		].join(';');
+	}
+
+	function safeHref(uri: string | null): string | null {
+		if (uri === null) return null;
+		if (uri.startsWith('/') || uri.startsWith('https://') || uri.startsWith('http://')) {
+			return uri;
+		}
+		if (uri.startsWith('mailto:')) return uri;
+		return null;
 	}
 </script>
 
@@ -37,7 +46,7 @@
 	style:--cell-height={`${cellHeight}px`}
 >
 	{#if snapshot}
-		{#each snapshot.lines as row (row.y)}<span class="row" style:top={`${row.y * cellHeight}px`}>{#each row.runs as run, index (`${run.x}:${index}`)}<span class="run" style={runStyle(run, snapshot)}>{run.text}</span>{/each}</span>{/each}
+		{#each snapshot.lines as row (row.y)}<span class="row" style:top={`${row.y * cellHeight}px`}>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href = safeHref(run.uri)}{#if href}<a class="run" style={runStyle(run, snapshot)} {href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noreferrer' : undefined}>{run.text}</a>{:else}<span class="run" style={runStyle(run, snapshot)}>{run.text}</span>{/if}{/each}</span>{/each}
 	{:else}
 		{fallback}
 	{/if}
@@ -71,6 +80,15 @@
 		top: 0;
 		height: var(--cell-height);
 		white-space: pre;
+	}
+
+	a.run {
+		cursor: pointer;
+	}
+
+	a.run:focus-visible {
+		outline: 2px solid #f0c674;
+		outline-offset: 1px;
 	}
 
 	.terminal-transcript::selection,

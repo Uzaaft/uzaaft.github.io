@@ -35,17 +35,24 @@ const DATA_CURSOR_VIEWPORT_Y = 16;
 const OPTION_DIRTY = 0;
 
 const ROW_DATA_DIRTY = 1;
+const ROW_DATA_RAW = 2;
 const ROW_DATA_CELLS = 3;
 const ROW_OPTION_DIRTY = 0;
 
+const CELLS_DATA_RAW = 1;
 const CELLS_DATA_STYLE = 2;
 const CELLS_DATA_BG_COLOR = 5;
 const CELLS_DATA_FG_COLOR = 6;
 const CELLS_DATA_HAS_STYLING = 8;
 const CELLS_DATA_GRAPHEMES_UTF8 = 9;
 
+const CELL_DATA_HAS_HYPERLINK = 7;
+const ROW_DATA_HAS_HYPERLINK = 5;
+const POINT_TAG_VIEWPORT = 1;
+
 /** Longest UTF-8 grapheme cluster we read from a single cell. */
 const GRAPHEME_CAP = 64;
+const HYPERLINK_CAP = 2048;
 
 export type Dirty = 'none' | 'partial' | 'full';
 
@@ -70,6 +77,8 @@ export interface CellRun {
 	readonly italic: boolean;
 	readonly underline: boolean;
 	readonly inverse: boolean;
+	/** OSC 8 destination shared by this run, or `null` for ordinary text. */
+	readonly uri: string | null;
 }
 
 export interface GridRow {
@@ -101,6 +110,7 @@ interface RunStyle {
 	readonly italic: boolean;
 	readonly underline: boolean;
 	readonly inverse: boolean;
+	readonly uri: string | null;
 }
 
 const sameStyle = (a: RunStyle, b: RunStyle): boolean =>
@@ -108,6 +118,7 @@ const sameStyle = (a: RunStyle, b: RunStyle): boolean =>
 	a.italic === b.italic &&
 	a.underline === b.underline &&
 	a.inverse === b.inverse &&
+	a.uri === b.uri &&
 	a.fg?.r === b.fg?.r &&
 	a.fg?.g === b.fg?.g &&
 	a.fg?.b === b.fg?.b &&
@@ -133,6 +144,11 @@ export class VtTerminal {
 		private readonly bufferPtr: number,
 		private readonly bufferSize: number,
 		private readonly textPtr: number,
+		private readonly pointPtr: number,
+		private readonly pointSize: number,
+		private readonly gridRefPtr: number,
+		private readonly gridRefSize: number,
+		private readonly hyperlinkPtr: number,
 		private readonly styleOffsets: {
 			readonly size: number;
 			readonly bold: number;
@@ -144,7 +160,14 @@ export class VtTerminal {
 			readonly ptr: number;
 			readonly cap: number;
 			readonly len: number;
-		}
+		},
+		private readonly pointOffsets: {
+			readonly tag: number;
+			readonly value: number;
+			readonly coordinateX: number;
+			readonly coordinateY: number;
+		},
+		private readonly gridRefSizeOffset: number
 	) {}
 
 	static create(
@@ -195,6 +218,8 @@ export class VtTerminal {
 
 		const styleSize = vt.structSize('GhosttyStyle');
 		const bufferSize = vt.structSize('GhosttyBuffer');
+		const pointSize = vt.structSize('GhosttyPoint');
+		const gridRefSize = vt.structSize('GhosttyGridRef');
 		const scratchSize = 8;
 
 		return ok(
@@ -211,6 +236,11 @@ export class VtTerminal {
 				e.ghostty_wasm_alloc_u8_array(bufferSize),
 				bufferSize,
 				e.ghostty_wasm_alloc_u8_array(GRAPHEME_CAP),
+				e.ghostty_wasm_alloc_u8_array(pointSize),
+				pointSize,
+				e.ghostty_wasm_alloc_u8_array(gridRefSize),
+				gridRefSize,
+				e.ghostty_wasm_alloc_u8_array(HYPERLINK_CAP),
 				{
 					size: vt.fieldOffset('GhosttyStyle', 'size'),
 					bold: vt.fieldOffset('GhosttyStyle', 'bold'),
@@ -222,7 +252,14 @@ export class VtTerminal {
 					ptr: vt.fieldOffset('GhosttyBuffer', 'ptr'),
 					cap: vt.fieldOffset('GhosttyBuffer', 'cap'),
 					len: vt.fieldOffset('GhosttyBuffer', 'len')
-				}
+				},
+				{
+					tag: vt.fieldOffset('GhosttyPoint', 'tag'),
+					value: vt.fieldOffset('GhosttyPoint', 'value'),
+					coordinateX: vt.fieldOffset('GhosttyPointCoordinate', 'x'),
+					coordinateY: vt.fieldOffset('GhosttyPointCoordinate', 'y')
+				},
+				vt.fieldOffset('GhosttyGridRef', 'size')
 			)
 		);
 	}
@@ -313,7 +350,7 @@ export class VtTerminal {
 		return new TextDecoder().decode(this.vt.bytes(this.textPtr, len));
 	}
 
-	private cellStyle(cells: number): Omit<RunStyle, 'fg' | 'bg'> {
+	private cellStyle(cells: number): Omit<RunStyle, 'fg' | 'bg' | 'uri'> {
 		// GHOSTTY_INIT_SIZED: sized structs carry their own size so the library
 		// can version them; zeroing it makes the call fail.
 		this.vt.bytes(this.stylePtr, this.styleSize).fill(0);
@@ -337,6 +374,82 @@ export class VtTerminal {
 			inverse: view.getUint8(this.stylePtr + this.styleOffsets.inverse) !== 0,
 			underline: view.getInt32(this.stylePtr + this.styleOffsets.underline, true) !== 0
 		};
+	}
+
+	private rowHasHyperlink(iterator: number): boolean {
+		this.vt.bytes(this.scratchPtr, this.scratchSize).fill(0);
+		const rawCode = this.vt.exports.ghostty_render_state_row_get(
+			iterator,
+			ROW_DATA_RAW,
+			this.scratchPtr
+		);
+		if (rawCode !== GHOSTTY_SUCCESS) return false;
+
+		const row = this.vt.view().getBigUint64(this.scratchPtr, true);
+		this.vt.bytes(this.scratchPtr, this.scratchSize).fill(0);
+		const code = this.vt.exports.ghostty_row_get(
+			row,
+			ROW_DATA_HAS_HYPERLINK,
+			this.scratchPtr
+		);
+		return code === GHOSTTY_SUCCESS && this.readBool();
+	}
+
+	private cellHasHyperlink(cells: number): boolean {
+		this.vt.bytes(this.scratchPtr, this.scratchSize).fill(0);
+		const rawCode = this.vt.exports.ghostty_render_state_row_cells_get(
+			cells,
+			CELLS_DATA_RAW,
+			this.scratchPtr
+		);
+		if (rawCode !== GHOSTTY_SUCCESS) return false;
+
+		const cell = this.vt.view().getBigUint64(this.scratchPtr, true);
+		this.vt.bytes(this.scratchPtr, this.scratchSize).fill(0);
+		const code = this.vt.exports.ghostty_cell_get(
+			cell,
+			CELL_DATA_HAS_HYPERLINK,
+			this.scratchPtr
+		);
+		return code === GHOSTTY_SUCCESS && this.readBool();
+	}
+
+	private hyperlinkUri(x: number, y: number): string | null {
+		const view = this.vt.view();
+		this.vt.bytes(this.pointPtr, this.pointSize).fill(0);
+		view.setUint32(this.pointPtr + this.pointOffsets.tag, POINT_TAG_VIEWPORT, true);
+		view.setUint16(
+			this.pointPtr + this.pointOffsets.value + this.pointOffsets.coordinateX,
+			x,
+			true
+		);
+		view.setUint32(
+			this.pointPtr + this.pointOffsets.value + this.pointOffsets.coordinateY,
+			y,
+			true
+		);
+
+		this.vt.bytes(this.gridRefPtr, this.gridRefSize).fill(0);
+		view.setUint32(this.gridRefPtr + this.gridRefSizeOffset, this.gridRefSize, true);
+		const refCode = this.vt.exports.ghostty_terminal_grid_ref(
+			this.terminal,
+			this.pointPtr,
+			this.gridRefPtr
+		);
+		if (refCode !== GHOSTTY_SUCCESS) return null;
+
+		this.vt.bytes(this.scratchPtr, this.scratchSize).fill(0);
+		const uriCode = this.vt.exports.ghostty_grid_ref_hyperlink_uri(
+			this.gridRefPtr,
+			this.hyperlinkPtr,
+			HYPERLINK_CAP,
+			this.scratchPtr
+		);
+		if (uriCode !== GHOSTTY_SUCCESS) return null;
+
+		const length = this.vt.view().getUint32(this.scratchPtr, true);
+		if (length === 0) return null;
+		return new TextDecoder().decode(this.vt.bytes(this.hyperlinkPtr, length));
 	}
 
 	/**
@@ -395,6 +508,7 @@ export class VtTerminal {
 			this.vt.bytes(this.scratchPtr, this.scratchSize).fill(0);
 			e.ghostty_render_state_row_get(iter, ROW_DATA_DIRTY, this.scratchPtr);
 			const rowDirty = this.readBool();
+			const rowHasHyperlink = this.rowHasHyperlink(iter);
 
 			const cellsCode = e.ghostty_render_state_row_get(
 				iter,
@@ -408,7 +522,7 @@ export class VtTerminal {
 			lines.push({
 				y,
 				dirty: rowDirty,
-				runs: this.readRuns(this.vt.readPointer(this.cellsSlot))
+				runs: this.readRuns(this.vt.readPointer(this.cellsSlot), y, rowHasHyperlink)
 			});
 
 			// Clear the row's dirty flag now that it has been read.
@@ -456,7 +570,7 @@ export class VtTerminal {
 	 * per cell — a full 100x30 repaint walks 3000 cells, so per-cell allocation
 	 * shows up.
 	 */
-	private readRuns(cells: number): readonly CellRun[] {
+	private readRuns(cells: number, y: number, rowHasHyperlink: boolean): readonly CellRun[] {
 		const e = this.vt.exports;
 		const runs: CellRun[] = [];
 
@@ -475,7 +589,8 @@ export class VtTerminal {
 				bold: style.bold,
 				italic: style.italic,
 				underline: style.underline,
-				inverse: style.inverse
+				inverse: style.inverse,
+				uri: style.uri
 			});
 		};
 
@@ -496,7 +611,9 @@ export class VtTerminal {
 				underline: attrs.underline,
 				inverse: attrs.inverse,
 				fg: hasStyling ? this.cellColor(cells, CELLS_DATA_FG_COLOR) : null,
-				bg: hasStyling ? this.cellColor(cells, CELLS_DATA_BG_COLOR) : null
+				bg: hasStyling ? this.cellColor(cells, CELLS_DATA_BG_COLOR) : null,
+				uri:
+					rowHasHyperlink && this.cellHasHyperlink(cells) ? this.hyperlinkUri(x, y) : null
 			};
 
 			if (style !== null && sameStyle(style, cellStyle)) {
@@ -524,6 +641,9 @@ export class VtTerminal {
 		e.ghostty_render_state_row_iterator_free(this.vt.readPointer(this.iterSlot));
 		e.ghostty_wasm_free_opaque(this.cellsSlot);
 		e.ghostty_wasm_free_opaque(this.iterSlot);
+		e.ghostty_wasm_free_u8_array(this.hyperlinkPtr, HYPERLINK_CAP);
+		e.ghostty_wasm_free_u8_array(this.gridRefPtr, this.gridRefSize);
+		e.ghostty_wasm_free_u8_array(this.pointPtr, this.pointSize);
 		e.ghostty_wasm_free_u8_array(this.textPtr, GRAPHEME_CAP);
 		e.ghostty_wasm_free_u8_array(this.bufferPtr, this.bufferSize);
 		e.ghostty_wasm_free_u8_array(this.stylePtr, this.styleSize);

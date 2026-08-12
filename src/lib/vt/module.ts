@@ -47,6 +47,19 @@ export interface VtExports {
 		cellWidthPx: number,
 		cellHeightPx: number
 	) => number;
+	readonly ghostty_terminal_grid_ref: (
+		terminal: number,
+		point: number,
+		outRef: number
+	) => number;
+	readonly ghostty_grid_ref_hyperlink_uri: (
+		ref: number,
+		buffer: number,
+		bufferLength: number,
+		outLength: number
+	) => number;
+	readonly ghostty_cell_get: (cell: bigint, data: number, out: number) => number;
+	readonly ghostty_row_get: (row: bigint, data: number, out: number) => number;
 
 	readonly ghostty_render_state_new: (allocator: number, out: number) => number;
 	readonly ghostty_render_state_free: (state: number) => void;
@@ -78,6 +91,10 @@ const REQUIRED_EXPORTS: readonly (keyof VtExports)[] = [
 	'ghostty_terminal_free',
 	'ghostty_terminal_vt_write',
 	'ghostty_terminal_resize',
+	'ghostty_terminal_grid_ref',
+	'ghostty_grid_ref_hyperlink_uri',
+	'ghostty_cell_get',
+	'ghostty_row_get',
 	'ghostty_render_state_new',
 	'ghostty_render_state_free',
 	'ghostty_render_state_update',
