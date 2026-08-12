@@ -27,11 +27,13 @@
           src = ./.;
           lockfile = ./pnpm-lock.yaml;
           fetcherVersion = 2;
-          hash = "sha256-VdACcGvyYpp5hg2xJZLZBciBiYK4wjQ/qIPVkpMMSjo=";
+          hash = "sha256-n8AdU75r0X1cTrYOw3JY88VN+JKjpjqRkwWTfTaMUjQ=";
         };
 
         buildPhase = "pnpm build";
-        installPhase = "mv dist $out";
+        # adapter is undecided (static vs cloudflare pending wasm/libghostty
+        # experiments); adapter-auto emits to .svelte-kit/output for now
+        installPhase = "mv .svelte-kit/output $out";
       };
     });
 
@@ -42,7 +44,7 @@
           pnpm
           pandoc
           texliveFull
-          astro-language-server
+          svelte-language-server
         ];
 
         shellHook = ''

@@ -1,0 +1,59 @@
+/* Tomorrow Night palette (Ghostty default) */
+:root {
+	--bg: #1d1f21;
+	--bg-bar: #17191b;
+	--bg-output: #191b1d;
+	--bg-card: #202325;
+	--bg-hover: #23272a;
+
+	--line: #2a2e31;
+	--line-soft: #23272a;
+	--line-strong: #2f3336;
+	--line-bright: #3a3f43;
+
+	--fg: #c5c8c6;
+	--fg-bright: #e8eaea;
+	--fg-muted: #8b9096;
+	--fg-dim: #6c7079;
+	--fg-faint: #4f5459;
+
+	--red: #cc6666;
+	--green: #b5bd68;
+	--green-bright: #c8d07a;
+	--yellow: #f0c674;
+	--blue: #81a2be;
+	--magenta: #b294bb;
+	--cyan: #8abeb7;
+}
+
+html,
+body {
+	margin: 0;
+	height: 100%;
+	background: var(--bg);
+	color: var(--fg);
+	font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	-webkit-font-smoothing: antialiased;
+}
+
+a {
+	color: var(--blue);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--cyan);
+}
+
+::-webkit-scrollbar {
+	width: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
