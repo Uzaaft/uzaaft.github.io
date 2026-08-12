@@ -19,6 +19,7 @@ export const RESET = `${ESC}[0m`;
  * transpilation cannot inline across module boundaries.
  */
 export const Color = {
+	Black: 30,
 	Red: 31,
 	Green: 32,
 	Yellow: 33,
@@ -27,7 +28,15 @@ export const Color = {
 	Cyan: 36,
 	White: 37,
 	/** Bright black — the palette's dim grey. */
-	Dim: 90
+	Dim: 90,
+	BrightBlack: 90,
+	BrightRed: 91,
+	BrightGreen: 92,
+	BrightYellow: 93,
+	BrightBlue: 94,
+	BrightMagenta: 95,
+	BrightCyan: 96,
+	BrightWhite: 97
 } as const;
 
 export type Color = (typeof Color)[keyof typeof Color];

@@ -1,5 +1,5 @@
 import { stripAnsi } from '$lib/shell/ansi';
-import { banner, hint, initialState, fastfetch, prompt } from '$lib/shell/commands';
+import { bootOutput } from '$lib/shell/commands';
 
 /**
  * Render the boot transcript as plain text at build time.
@@ -15,16 +15,8 @@ import { banner, hint, initialState, fastfetch, prompt } from '$lib/shell/comman
 export function load(): { readonly transcript: string } {
 	// No previous login at build time — the prerendered transcript is what a
 	// first-time visitor sees, which is also what a crawler should read.
-	const boot =
-		banner(null) +
-		prompt(initialState) +
-		'fastfetch\r\n' +
-		fastfetch() +
-		hint() +
-		prompt(initialState);
-
 	return {
-		transcript: stripAnsi(boot)
+		transcript: stripAnsi(bootOutput(null))
 			.split('\r\n')
 			.map((line) => line.replace(/\s+$/, ''))
 			.join('\n')

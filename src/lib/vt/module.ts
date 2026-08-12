@@ -187,7 +187,9 @@ export class VtModule {
 		let instance: WebAssembly.Instance;
 
 		try {
-			const source = await fetch(url);
+			// `credentials: 'omit'` matches the `crossorigin` preload in app.html
+			// so this fetch reuses that response instead of starting a second one.
+			const source = await fetch(url, { credentials: 'omit' });
 			if (!source.ok) {
 				return err(new VtModuleLoadFailed(url, new Error(`HTTP ${source.status}`)));
 			}
@@ -211,7 +213,7 @@ export class VtModule {
 			try {
 				result = await WebAssembly.instantiateStreaming(source, imports);
 			} catch {
-				const buffer = await (await fetch(url)).arrayBuffer();
+				const buffer = await (await fetch(url, { credentials: 'omit' })).arrayBuffer();
 				result = await WebAssembly.instantiate(buffer, imports);
 			}
 			instance = result.instance;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { base } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import {
@@ -11,9 +12,8 @@
 		stripAnsi
 	} from '$lib/shell/ansi';
 	import {
-		banner,
+		bootOutput,
 		complete,
-		hint,
 		initialState,
 		prompt,
 		run,
@@ -29,8 +29,11 @@
 
 	const FONT = { family: "'JetBrains Mono', ui-monospace, monospace", sizePx: 13.5, lineHeight: 1.6 };
 	const THEME: Theme = { foreground: '#c5c8c6', background: '#1d1f21', cursor: '#f0c674' };
-	const BOOT_COMMAND = 'fastfetch';
-	const KEYSTROKE_MS = 62;
+
+	// Start the wasm fetch as soon as this module evaluates, in parallel with
+	// layout and the preloaded font. Waiting until onMount used to serialize
+	// it behind font loading and a typewriter replay.
+	const wasmModule = browser ? VtModule.load(`${base}/ghostty-vt.wasm`) : null;
 
 	let canvasEl: HTMLCanvasElement | undefined = $state();
 	let surfaceEl: HTMLDivElement | undefined = $state();
@@ -50,7 +53,7 @@
 	let snapshot = $state<GridSnapshot | null>(null);
 	let failure = $state<string | null>(null);
 	let announcement = $state<{ readonly id: number; readonly text: string } | null>(null);
-	/** Gates input and the chip bar until the boot animation finishes. */
+	/** Gates input and the chip bar until the live VT is ready. */
 	let interactive = $state(false);
 
 	/** Non-reactive engine state: mutating these must never trigger a re-render. */
@@ -283,39 +286,12 @@
 		paint(true);
 	}
 
-	/** Type the boot command a character at a time, then run it. */
-	async function playBoot(): Promise<void> {
-		const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+	/** Seed the VT with the same transcript the prerendered HTML already shows. */
+	function playBoot(): void {
 		// Recorded once per page load, before anything is drawn, so the banner
 		// reports the visit before this one rather than this one.
-		write(banner(beginSession(new Date())) + prompt(shell));
+		write(bootOutput(beginSession(new Date())));
 		schedule();
-
-		if (reducedMotion) {
-			write(BOOT_COMMAND + CRLF);
-		} else {
-			await sleep(420);
-
-			for (const char of BOOT_COMMAND) {
-				write(char);
-				schedule();
-				await sleep(KEYSTROKE_MS);
-			}
-
-			await sleep(320);
-			write(CRLF);
-		}
-
-		const result = run(BOOT_COMMAND, shell);
-		shell = result.state;
-		if (result.effect.kind === 'write' || result.effect.kind === 'open') {
-			write(result.effect.output);
-		}
-		write(hint() + prompt(shell));
-		schedule();
-
 		interactive = true;
 		inputEl?.focus();
 	}
@@ -333,21 +309,13 @@
 				return;
 			}
 
-			// Measuring before the webfont loads would lock in the fallback's
-			// advance width and leave the grid misaligned once it swaps in.
-			//
-			// `fonts.ready` alone is not enough: it resolves once *pending* loads
-			// settle, and a font nothing has painted yet has not been requested.
-			// Ask for both weights explicitly first. A failure here is not fatal —
-			// the fallback still renders, just at a different pitch.
-			await Promise.allSettled([
-				document.fonts.load(`${FONT.sizePx}px ${FONT.family}`),
-				document.fonts.load(`700 ${FONT.sizePx}px ${FONT.family}`),
-				document.fonts.load(`italic ${FONT.sizePx}px ${FONT.family}`)
+			// Regular is the only face we measure. Bold and italic share its
+			// pitch, so they can finish after first paint. A failure here is
+			// not fatal — the fallback still renders, just at a different pitch.
+			const [loaded] = await Promise.all([
+				wasmModule ?? VtModule.load(`${base}/ghostty-vt.wasm`),
+				document.fonts.load(`${FONT.sizePx}px ${FONT.family}`).catch(() => undefined)
 			]);
-			await document.fonts.ready;
-
-			const loaded = await VtModule.load(`${base}/ghostty-vt.wasm`);
 			if (loaded._tag === 'err') {
 				failure = loaded.error.message;
 				return;
@@ -380,7 +348,7 @@
 			observer = new ResizeObserver(() => fitToSurface());
 			observer.observe(surfaceEl);
 
-			await playBoot();
+			playBoot();
 		};
 
 		void boot();

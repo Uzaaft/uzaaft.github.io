@@ -57,17 +57,45 @@ const write = (state: ShellState, output: string): ShellResult => ({
 	effect: { kind: 'write', output }
 });
 
+/** Command the live terminal runs on a fresh load. */
+export const BOOT_COMMAND = 'fastfetch';
+
+const DARK_SWATCHES = [
+	Color.Black,
+	Color.Red,
+	Color.Green,
+	Color.Yellow,
+	Color.Blue,
+	Color.Magenta,
+	Color.Cyan,
+	Color.White
+] as const;
+
+const BRIGHT_SWATCHES = [
+	Color.BrightBlack,
+	Color.BrightRed,
+	Color.BrightGreen,
+	Color.BrightYellow,
+	Color.BrightBlue,
+	Color.BrightMagenta,
+	Color.BrightCyan,
+	Color.BrightWhite
+] as const;
+
+const swatches = (colors: readonly Color[]): string =>
+	colors.map((color) => fg(color, '███')).join('');
+
 /** The fastfetch card: beaver on the left, key/value rows on the right. */
 export function fastfetch(): string {
 	const artWidth = Math.max(...BEAVER.map((line) => line.length));
+	const title = `${host.user}@${host.machine}`;
+	const labelWidth = Math.max(...fetchRows.map((row) => row.label.length)) + 1;
 	const right: string[] = [
 		boldFg(Color.Yellow, host.user) + fg(Color.Dim, '@') + boldFg(Color.Yellow, host.machine),
-		fg(Color.Dim, '─'.repeat(30)),
-		...fetchRows.map((row) => fg(Color.Cyan, pad(row.label, 11)) + row.value),
-		'',
-		[Color.Red, Color.Green, Color.Yellow, Color.Blue, Color.Magenta, Color.Cyan]
-			.map((color) => fg(color, '███'))
-			.join('')
+		fg(Color.Dim, '-'.repeat(title.length)),
+		...fetchRows.map((row) => fg(Color.Cyan, pad(`${row.label}:`, labelWidth + 1)) + row.value),
+		swatches(DARK_SWATCHES),
+		swatches(BRIGHT_SWATCHES)
 	];
 
 	const height = Math.max(BEAVER.length, right.length);
@@ -79,6 +107,26 @@ export function fastfetch(): string {
 	}
 
 	return lines(...out);
+}
+
+/**
+ * The bytes a fresh visit writes: login banner, the boot command, its
+ * output, the hint, and a prompt. Shared by the prerendered transcript and
+ * the live VT so hydration paints the same grid the HTML already showed.
+ */
+export function bootOutput(previous: PreviousLogin | null): string {
+	const result = run(BOOT_COMMAND, initialState);
+	const output =
+		result.effect.kind === 'write' || result.effect.kind === 'open' ? result.effect.output : '';
+	return (
+		banner(previous) +
+		prompt(initialState) +
+		BOOT_COMMAND +
+		CRLF +
+		output +
+		hint() +
+		prompt(initialState)
+	);
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;

@@ -37,7 +37,7 @@ const css = (color: Rgb): string => `rgb(${color.r} ${color.g} ${color.b})`;
  *
  * These must tile the cell exactly. Fonts disagree about their metrics — the
  * JetBrains Mono webfont subset omits U+2588 entirely, so it falls back to a
- * glyph only ~14px tall in a 21.6px line and the neofetch swatches render as a
+ * glyph only ~14px tall in a 21.6px line and the fastfetch swatches render as a
  * thin stripe. Terminals special-case this range for the same reason.
  *
  * Each entry maps a codepoint to the fraction of the cell to fill:
