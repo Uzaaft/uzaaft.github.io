@@ -3,12 +3,10 @@
 	import { onMount, untrack } from 'svelte';
 	import {
 		CLEAR,
-		CLEAR_LINE,
 		CRLF,
 		ENTER_ALTERNATE_SCREEN,
 		HIDE_CURSOR,
 		LEAVE_ALTERNATE_SCREEN,
-		LINE_START,
 		SHOW_CURSOR
 	} from '$lib/shell/ansi';
 	import {
@@ -57,7 +55,7 @@
 	let terminal: VtTerminal | null = null;
 	let renderer: CanvasRenderer | null = null;
 	let shell: ShellState = initialState;
-	let line = '';
+	let line = $state('');
 	let history: string[] = [];
 	let historyIndex = -1;
 	let frame = 0;
@@ -105,14 +103,8 @@
 		terminal?.writeText(bytes);
 	}
 
-	/** Redraw the prompt and the line being edited, in place. */
-	function refreshLine(): void {
-		write(LINE_START + CLEAR_LINE + prompt(shell) + line);
-		schedule();
-	}
-
 	function submit(raw: string): void {
-		write(CRLF);
+		write(raw + CRLF);
 
 		const result = run(raw, shell);
 		shell = result.state;
@@ -177,7 +169,7 @@
 	}
 
 	function onKeyDown(event: KeyboardEvent): void {
-		if (!interactive) return;
+		if (!interactive || event.isComposing) return;
 
 		if (event.key === 'Enter') {
 			event.preventDefault();
@@ -185,16 +177,9 @@
 			return;
 		}
 
-		if (event.key === 'Backspace') {
-			event.preventDefault();
-			line = line.slice(0, -1);
-			refreshLine();
-			return;
-		}
-
 		if (event.key === 'l' && event.ctrlKey) {
 			event.preventDefault();
-			write(CLEAR + prompt(shell) + line);
+			write(CLEAR + prompt(shell));
 			schedule(true);
 			return;
 		}
@@ -202,7 +187,6 @@
 		if (event.key === 'u' && event.ctrlKey) {
 			event.preventDefault();
 			line = '';
-			refreshLine();
 			return;
 		}
 
@@ -211,9 +195,10 @@
 			const completion = complete(line);
 			if (completion.kind === 'single') {
 				line = completion.input;
-				refreshLine();
 			} else if (completion.kind === 'many') {
-				write(CRLF + completion.matches.join('  ') + CRLF + prompt(shell) + line);
+				write(
+					line + CRLF + completion.matches.join('  ') + CRLF + prompt(shell)
+				);
 				schedule();
 			}
 			return;
@@ -225,7 +210,6 @@
 			if (next >= 0) {
 				historyIndex = next;
 				line = history[next];
-				refreshLine();
 			}
 			return;
 		}
@@ -235,22 +219,12 @@
 			historyIndex -= 1;
 			line = historyIndex >= 0 ? history[historyIndex] : '';
 			if (historyIndex < -1) historyIndex = -1;
-			refreshLine();
-			return;
-		}
-
-		// Printable characters only; modifiers and named keys fall through.
-		if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
-			event.preventDefault();
-			line += event.key;
-			refreshLine();
 		}
 	}
 
 	function runChip(command: string): void {
 		if (!interactive) return;
 		line = command;
-		refreshLine();
 		submit(command);
 		inputEl?.focus();
 	}
@@ -412,17 +386,21 @@
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
 		<TerminalTranscript {snapshot} fallback={mirror} {cellWidth} {cellHeight} />
 
-		<!-- Keeps a real caret, mobile keyboards, and IME working; the visible
-		     cursor is painted by the renderer. -->
+		<!-- Native editing keeps selection, mobile keyboards, and IME behavior. -->
 		<input
 			bind:this={inputEl}
+			bind:value={line}
 			onkeydown={onKeyDown}
-			value=""
 			class="capture"
+			disabled={!interactive}
+			style:left={`${(snapshot?.cursor?.x ?? 0) * cellWidth}px`}
+			style:top={`${(snapshot?.cursor?.y ?? 0) * cellHeight}px`}
+			style:height={`${cellHeight}px`}
+			style:line-height={`${cellHeight}px`}
 			spellcheck="false"
 			autocomplete="off"
 			autocapitalize="off"
-			aria-label="Terminal input"
+			aria-label="Terminal command"
 		/>
 
 		{#if failure}
@@ -513,18 +491,23 @@
 		visibility: hidden;
 	}
 
-	/* Focusable and typed into, but never seen. */
+	/* Native command editor, positioned immediately after the VT prompt. */
 	.capture {
 		position: absolute;
-		top: 0;
-		left: 0;
-		width: 1px;
-		height: 1px;
-		opacity: 0;
+		z-index: 2;
+		right: 0;
+		box-sizing: border-box;
 		border: none;
 		outline: none;
 		padding: 0;
 		background: transparent;
+		color: #c5c8c6;
+		caret-color: #f0c674;
+		font: 13.5px/1 'JetBrains Mono', ui-monospace, monospace;
+	}
+
+	.capture:disabled {
+		display: none;
 	}
 
 	.failure {
