@@ -229,6 +229,14 @@
 		inputEl?.focus();
 	}
 
+	function focusInputFromSurface(event: MouseEvent): void {
+		if (!(event.target instanceof Element)) return;
+		if (event.target.closest('a, button, input, [data-terminal-run]')) return;
+		const selection = window.getSelection();
+		if (selection !== null && !selection.isCollapsed) return;
+		inputEl?.focus();
+	}
+
 	function fitToSurface(): void {
 		if (!renderer || !terminal || !surfaceEl) return;
 		const rect = surfaceEl.getBoundingClientRect();
@@ -380,7 +388,7 @@
 	<div
 		class="surface"
 		bind:this={surfaceEl}
-		onclick={() => inputEl?.focus()}
+		onclick={focusInputFromSurface}
 		role="presentation"
 	>
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>

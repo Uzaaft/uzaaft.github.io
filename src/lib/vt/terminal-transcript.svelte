@@ -42,11 +42,12 @@
 
 <pre
 	class="terminal-transcript"
+	data-terminal-transcript
 	aria-label="Terminal transcript"
 	style:--cell-height={`${cellHeight}px`}
 >
 	{#if snapshot}
-		{#each snapshot.lines as row (row.y)}<span class="row" style:top={`${row.y * cellHeight}px`}>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href = safeHref(run.uri)}{#if href}<a class="run" style={runStyle(run, snapshot)} {href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noreferrer' : undefined}>{run.text}</a>{:else}<span class="run" style={runStyle(run, snapshot)}>{run.text}</span>{/if}{/each}</span>{/each}
+		{#each snapshot.lines as row (row.y)}<span class="row" style:top={`${row.y * cellHeight}px`}>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href = safeHref(run.uri)}{#if href}<a class="run" data-terminal-run style={runStyle(run, snapshot)} {href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noreferrer' : undefined}>{run.text}</a>{:else}<span class="run" data-terminal-run style={runStyle(run, snapshot)}>{run.text}</span>{/if}{/each}</span>{/each}
 	{:else}
 		{fallback}
 	{/if}
@@ -73,6 +74,7 @@
 		left: 0;
 		right: 0;
 		height: var(--cell-height);
+		pointer-events: none;
 	}
 
 	.run {
@@ -80,6 +82,7 @@
 		top: 0;
 		height: var(--cell-height);
 		white-space: pre;
+		pointer-events: auto;
 	}
 
 	a.run {
