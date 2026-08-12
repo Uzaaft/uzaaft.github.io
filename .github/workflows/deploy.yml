@@ -3,7 +3,6 @@ name: Deploy
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -70,7 +69,8 @@ jobs:
   deploy:
     name: Deploy to Pages
     needs: [check, build]
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # Manual runs can select another ref; never deploy one of those by accident.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     permissions:
