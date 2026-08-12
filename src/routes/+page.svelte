@@ -29,6 +29,7 @@
 
 	const FONT = { family: "'JetBrains Mono', ui-monospace, monospace", sizePx: 13.5, lineHeight: 1.6 };
 	const THEME: Theme = { foreground: '#c5c8c6', background: '#1d1f21', cursor: '#f0c674' };
+	const DRAG_THRESHOLD_PX = 4;
 
 	// Start the wasm fetch as soon as this module evaluates, in parallel with
 	// layout and the preloaded font. Waiting until onMount used to serialize
@@ -70,6 +71,10 @@
 	let cellHeight = $state(22);
 	let trainTimer: number | undefined;
 	let announcementId = 0;
+	/** Distinguishes a click from a drag-select so we can refocus without killing copy. */
+	let pointerOriginX = 0;
+	let pointerOriginY = 0;
+	let sawPointerDown = false;
 
 	function paint(force = false): void {
 		if (!terminal || !renderer) return;
@@ -256,12 +261,40 @@
 		inputEl?.focus();
 	}
 
-	function focusInputFromSurface(event: MouseEvent): void {
+	function rememberPointerOrigin(event: PointerEvent): void {
+		pointerOriginX = event.clientX;
+		pointerOriginY = event.clientY;
+		sawPointerDown = true;
+	}
+
+	/** Click the chrome or transcript to type. Skip links, buttons, and drag-selects. */
+	function focusInputFromClick(event: MouseEvent): void {
 		if (!(event.target instanceof Element)) return;
-		if (event.target.closest('a, button, input, [data-terminal-run]')) return;
-		const selection = window.getSelection();
-		if (selection !== null && !selection.isCollapsed) return;
+		if (event.target.closest('a, button, input')) return;
+		if (sawPointerDown) {
+			const dx = event.clientX - pointerOriginX;
+			const dy = event.clientY - pointerOriginY;
+			if (dx * dx + dy * dy > DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) return;
+		}
 		inputEl?.focus();
+	}
+
+	/**
+	 * If the input lost focus, the first printable key would otherwise vanish.
+	 * Reclaim it so you can just start typing.
+	 */
+	function onPageKeyDown(event: KeyboardEvent): void {
+		if (!interactive || !inputEl || inputEl.disabled) return;
+		if (document.activeElement === inputEl) return;
+		if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+		if (event.key.length !== 1) return;
+		if (event.target instanceof Element && event.target.closest('a, button, input, textarea, select')) {
+			return;
+		}
+
+		event.preventDefault();
+		inputEl.focus();
+		line += event.key;
 	}
 
 	function fitToSurface(): void {
@@ -299,6 +332,9 @@
 	onMount(() => {
 		let disposed = false;
 		let observer: ResizeObserver | undefined;
+
+		document.addEventListener('pointerdown', rememberPointerOrigin);
+		document.addEventListener('click', focusInputFromClick);
 
 		const boot = async (): Promise<void> => {
 			if (!canvasEl || !surfaceEl) return;
@@ -355,6 +391,8 @@
 
 		return () => {
 			disposed = true;
+			document.removeEventListener('pointerdown', rememberPointerOrigin);
+			document.removeEventListener('click', focusInputFromClick);
 			observer?.disconnect();
 			if (frame !== 0) cancelAnimationFrame(frame);
 			if (trainTimer !== undefined) window.clearTimeout(trainTimer);
@@ -372,6 +410,8 @@
 	/>
 </svelte:head>
 
+<svelte:window onkeydown={onPageKeyDown} />
+
 <a class="skip-link" href="#terminal-transcript">Skip to terminal transcript</a>
 
 <div class="shell">
@@ -385,12 +425,7 @@
 		</div>
 	</header>
 
-	<div
-		class="surface"
-		bind:this={surfaceEl}
-		onclick={focusInputFromSurface}
-		role="presentation"
-	>
+	<div class="surface" bind:this={surfaceEl} role="presentation">
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
 		<TerminalTranscript {snapshot} fallback={mirror} {cellWidth} {cellHeight} />
 
