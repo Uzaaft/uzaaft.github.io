@@ -286,21 +286,27 @@
 	/** Type the boot command a character at a time, then run it. */
 	async function playBoot(): Promise<void> {
 		const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 		// Recorded once per page load, before anything is drawn, so the banner
 		// reports the visit before this one rather than this one.
 		write(banner(beginSession(new Date())) + prompt(shell));
 		schedule();
-		await sleep(420);
 
-		for (const char of BOOT_COMMAND) {
-			write(char);
-			schedule();
-			await sleep(KEYSTROKE_MS);
+		if (reducedMotion) {
+			write(BOOT_COMMAND + CRLF);
+		} else {
+			await sleep(420);
+
+			for (const char of BOOT_COMMAND) {
+				write(char);
+				schedule();
+				await sleep(KEYSTROKE_MS);
+			}
+
+			await sleep(320);
+			write(CRLF);
 		}
-
-		await sleep(320);
-		write(CRLF);
 
 		const result = run(BOOT_COMMAND, shell);
 		shell = result.state;
@@ -398,6 +404,8 @@
 	/>
 </svelte:head>
 
+<a class="skip-link" href="#terminal-transcript">Skip to terminal transcript</a>
+
 <div class="shell">
 	<header>
 		<div class="tab"><span class="dot"></span>uzaaft@bobr</div>
@@ -433,6 +441,7 @@
 			autocomplete="off"
 			autocapitalize="off"
 			aria-label="Terminal command"
+			aria-describedby="terminal-hint"
 		/>
 
 		{#if failure}
@@ -453,18 +462,34 @@
 			<button onclick={() => runChip(chip)} disabled={!interactive}>{chip}</button>
 		{/each}
 		<div class="spacer"></div>
-		<span class="hint">tab completes · ↑ history · ctrl-l clears</span>
+		<a class="plain-link" href={`${base}/plain`}>plain page</a>
+		<span class="hint" id="terminal-hint">tab completes · ↑ history · ctrl-l clears</span>
 	</footer>
 </div>
 
 <style>
 	.shell {
-		height: 100vh;
-		height: 100dvh;
+		min-height: 100vh;
+		min-height: 100dvh;
 		display: flex;
 		flex-direction: column;
 		background: #131517;
-		overflow: hidden;
+	}
+
+	.skip-link {
+		position: fixed;
+		top: 8px;
+		left: 8px;
+		z-index: 10;
+		padding: 8px 12px;
+		transform: translateY(-160%);
+		color: #1d1f21;
+		background: #f0c674;
+		border-radius: 4px;
+	}
+
+	.skip-link:focus {
+		transform: translateY(0);
 	}
 
 	header {
@@ -509,7 +534,7 @@
 		align-items: center;
 		gap: 14px;
 		font-size: 11px;
-		color: #4f5459;
+		color: #8b9096;
 	}
 
 	.pipe {
@@ -519,9 +544,14 @@
 	.surface {
 		position: relative;
 		flex: 1;
+		min-height: 18rem;
 		overflow: hidden;
 		background: #1d1f21;
 		cursor: text;
+	}
+
+	.surface:focus-within {
+		box-shadow: inset 0 0 0 2px #81a2be;
 	}
 
 	canvas {
@@ -581,7 +611,7 @@
 
 	.label {
 		font-size: 11px;
-		color: #4f5459;
+		color: #8b9096;
 		margin-right: 4px;
 	}
 
@@ -601,6 +631,12 @@
 		color: #b5bd68;
 	}
 
+	footer button:focus-visible,
+	.plain-link:focus-visible {
+		outline: 2px solid #f0c674;
+		outline-offset: 2px;
+	}
+
 	footer button:disabled {
 		opacity: 0.5;
 		cursor: default;
@@ -608,6 +644,27 @@
 
 	.hint {
 		font-size: 11px;
-		color: #3a3f43;
+		color: #8b9096;
+	}
+
+	.plain-link {
+		font-size: 11.5px;
+		color: #81a2be;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	@media (max-width: 40rem) {
+		header {
+			height: auto;
+			min-height: 38px;
+		}
+
+		.meta {
+			flex-wrap: wrap;
+			justify-content: flex-end;
+			gap: 4px 10px;
+			padding: 4px 0;
+		}
 	}
 </style>

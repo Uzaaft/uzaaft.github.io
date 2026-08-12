@@ -41,6 +41,7 @@
 </script>
 
 <pre
+	id="terminal-transcript"
 	class="terminal-transcript"
 	data-terminal-transcript
 	role="region"
