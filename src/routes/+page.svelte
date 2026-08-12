@@ -400,7 +400,7 @@
 	<title>Uzair Aftab — uzaaft.me</title>
 	<meta
 		name="description"
-		content="Software engineer in Oslo. Rust, Zig, and terminals: libghostty-vt, astrocommunity."
+		content="Software engineer in Oslo. Rust, Zig, and nix: libghostty-rs, astrocommunity."
 	/>
 </svelte:head>
 
