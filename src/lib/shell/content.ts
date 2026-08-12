@@ -29,12 +29,12 @@ export const BEAVER: readonly string[] = [
 ];
 
 export const fetchRows: readonly { readonly label: string; readonly value: string }[] = [
-	{ label: 'role', value: 'Software engineer @ Polymath' },
-	{ label: 'location', value: 'Oslo, Norway' },
-	{ label: 'tools', value: 'zsh · neovim · ghostty' },
-	{ label: 'languages', value: 'Rust · Zig · Lua · TypeScript' },
-	{ label: 'currently', value: 'developer tooling, tackling engineering problems' },
-	{ label: 'education', value: 'NMBU' }
+	{ label: 'Role', value: 'Software engineer @ Polymath' },
+	{ label: 'Location', value: 'Oslo, Norway' },
+	{ label: 'Tools', value: 'zsh · neovim · ghostty' },
+	{ label: 'Languages', value: 'Rust · Zig · Lua · TypeScript' },
+	{ label: 'Currently', value: 'developer tooling, tackling engineering problems' },
+	{ label: 'Education', value: 'NMBU' }
 ];
 
 export const posts: readonly {
@@ -71,7 +71,7 @@ export const projects: readonly {
 
 export const helpEntries: readonly { readonly usage: string; readonly blurb: string }[] = [
 	{ usage: 'whoami', blurb: 'the short version' },
-	{ usage: 'neofetch', blurb: 'the card' },
+	{ usage: 'fastfetch', blurb: 'the card' },
 	{ usage: 'ls', blurb: 'list the current directory' },
 	{ usage: 'sl', blurb: 'you meant ls, right?' },
 	{ usage: 'cd <dir>', blurb: 'projects · blog' },
@@ -125,7 +125,7 @@ export const sayings = {
 export const COMMANDS: readonly string[] = [
 	'help',
 	'whoami',
-	'neofetch',
+	'fastfetch',
 	'ls',
 	'sl',
 	'cat',

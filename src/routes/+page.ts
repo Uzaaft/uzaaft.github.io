@@ -1,5 +1,5 @@
 import { stripAnsi } from '$lib/shell/ansi';
-import { banner, hint, initialState, neofetch, prompt } from '$lib/shell/commands';
+import { banner, hint, initialState, fastfetch, prompt } from '$lib/shell/commands';
 
 /**
  * Render the boot transcript as plain text at build time.
@@ -18,8 +18,8 @@ export function load(): { readonly transcript: string } {
 	const boot =
 		banner(null) +
 		prompt(initialState) +
-		'neofetch\r\n' +
-		neofetch() +
+		'fastfetch\r\n' +
+		fastfetch() +
 		hint() +
 		prompt(initialState);
 

@@ -57,8 +57,8 @@ const write = (state: ShellState, output: string): ShellResult => ({
 	effect: { kind: 'write', output }
 });
 
-/** The neofetch card: beaver on the left, key/value rows on the right. */
-export function neofetch(): string {
+/** The fastfetch card: beaver on the left, key/value rows on the right. */
+export function fastfetch(): string {
 	const artWidth = Math.max(...BEAVER.map((line) => line.length));
 	const right: string[] = [
 		boldFg(Color.Yellow, host.user) + fg(Color.Dim, '@') + boldFg(Color.Yellow, host.machine),
@@ -234,8 +234,8 @@ export function run(raw: string, state: ShellState): ShellResult {
 		case 'whoami':
 			return write(state, lines(sayings.whoami, ''));
 
-		case 'neofetch':
-			return write(state, neofetch() + CRLF);
+		case 'fastfetch':
+			return write(state, fastfetch() + CRLF);
 
 		case 'ls':
 			return write(state, listDirectory(state.cwd));

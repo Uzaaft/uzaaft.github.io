@@ -29,7 +29,7 @@
 
 	const FONT = { family: "'JetBrains Mono', ui-monospace, monospace", sizePx: 13.5, lineHeight: 1.6 };
 	const THEME: Theme = { foreground: '#c5c8c6', background: '#1d1f21', cursor: '#f0c674' };
-	const BOOT_COMMAND = 'neofetch';
+	const BOOT_COMMAND = 'fastfetch';
 	const KEYSTROKE_MS = 62;
 
 	let canvasEl: HTMLCanvasElement | undefined = $state();
