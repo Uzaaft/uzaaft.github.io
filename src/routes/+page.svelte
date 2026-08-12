@@ -26,6 +26,7 @@
 	import { CanvasRenderer, type Theme } from '$lib/vt/canvas-renderer';
 	import { VtModule } from '$lib/vt/module';
 	import { VtTerminal, type GridSnapshot } from '$lib/vt/terminal';
+	import TerminalTranscript from '$lib/vt/terminal-transcript.svelte';
 
 	const FONT = { family: "'JetBrains Mono', ui-monospace, monospace", sizePx: 13.5, lineHeight: 1.6 };
 	const THEME: Theme = { foreground: '#c5c8c6', background: '#1d1f21', cursor: '#f0c674' };
@@ -47,6 +48,7 @@
 	 * never re-navigated to, and after boot this belongs to the renderer.
 	 */
 	let mirror = $state(untrack(() => data.transcript));
+	let snapshot = $state<GridSnapshot | null>(null);
 	let failure = $state<string | null>(null);
 	/** Gates input and the chip bar until the boot animation finishes. */
 	let interactive = $state(false);
@@ -61,17 +63,20 @@
 	let frame = 0;
 	let gridCols = 80;
 	let gridRows = 24;
+	let cellWidth = $state(8);
+	let cellHeight = $state(22);
 	let trainTimer: number | undefined;
 
 	function paint(force = false): void {
 		if (!terminal || !renderer) return;
-		const snapshot = terminal.snapshot();
-		if (snapshot._tag === 'err') {
-			failure = snapshot.error.message;
+		const result = terminal.snapshot();
+		if (result._tag === 'err') {
+			failure = result.error.message;
 			return;
 		}
-		renderer.draw(snapshot.value, force);
-		updateMirror(snapshot.value);
+		renderer.draw(result.value, force);
+		snapshot = result.value;
+		updateMirror(snapshot);
 	}
 
 	/** Schedule a repaint on the next frame, coalescing bursts of writes. */
@@ -267,6 +272,8 @@
 		dims = `${grid.cols}×${grid.rows}`;
 		gridCols = grid.cols;
 		gridRows = grid.rows;
+		cellWidth = renderer.cell.width;
+		cellHeight = renderer.cell.height;
 		paint(true);
 	}
 
@@ -355,6 +362,8 @@
 			dims = `${initial.cols}×${initial.rows}`;
 			gridCols = initial.cols;
 			gridRows = initial.rows;
+			cellWidth = renderer.cell.width;
+			cellHeight = renderer.cell.height;
 
 			observer = new ResizeObserver(() => fitToSurface());
 			observer.observe(surfaceEl);
@@ -401,6 +410,7 @@
 		role="presentation"
 	>
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
+		<TerminalTranscript {snapshot} fallback={mirror} {cellWidth} {cellHeight} />
 
 		<!-- Keeps a real caret, mobile keyboards, and IME working; the visible
 		     cursor is painted by the renderer. -->
@@ -419,7 +429,6 @@
 			<p class="failure" role="alert">{failure}</p>
 		{/if}
 
-		<div class="sr-only" aria-live="polite" aria-atomic="false">{mirror}</div>
 	</div>
 
 	<footer>
@@ -501,6 +510,7 @@
 
 	canvas {
 		display: block;
+		visibility: hidden;
 	}
 
 	/* Focusable and typed into, but never seen. */
@@ -523,18 +533,6 @@
 		margin: 0;
 		font-size: 12px;
 		color: #cc6666;
-	}
-
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: pre-wrap;
-		border: 0;
 	}
 
 	footer {
