@@ -45,6 +45,16 @@ export const boldFg = (color: Color, text: string): string =>
 /** Clear the screen and home the cursor. */
 export const CLEAR = `${ESC}[2J${ESC}[H`;
 
+/** Switch to a fresh screen buffer, preserving the shell transcript. */
+export const ENTER_ALTERNATE_SCREEN = `${ESC}[?1049h`;
+
+/** Return to the shell transcript saved before entering the alternate screen. */
+export const LEAVE_ALTERNATE_SCREEN = `${ESC}[?1049l`;
+
+export const HIDE_CURSOR = `${ESC}[?25l`;
+
+export const SHOW_CURSOR = `${ESC}[?25h`;
+
 /** Erase from the cursor to the end of the line. */
 export const CLEAR_LINE = `${ESC}[K`;
 

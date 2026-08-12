@@ -1,7 +1,16 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
-	import { CLEAR, CLEAR_LINE, CRLF, LINE_START } from '$lib/shell/ansi';
+	import {
+		CLEAR,
+		CLEAR_LINE,
+		CRLF,
+		ENTER_ALTERNATE_SCREEN,
+		HIDE_CURSOR,
+		LEAVE_ALTERNATE_SCREEN,
+		LINE_START,
+		SHOW_CURSOR
+	} from '$lib/shell/ansi';
 	import {
 		banner,
 		complete,
@@ -13,6 +22,7 @@
 	} from '$lib/shell/commands';
 	import { CHIPS } from '$lib/shell/content';
 	import { beginSession } from '$lib/shell/session';
+	import { renderTrainFrame, TRAIN_WIDTH } from '$lib/shell/train';
 	import { CanvasRenderer, type Theme } from '$lib/vt/canvas-renderer';
 	import { VtModule } from '$lib/vt/module';
 	import { VtTerminal, type GridSnapshot } from '$lib/vt/terminal';
@@ -49,6 +59,9 @@
 	let history: string[] = [];
 	let historyIndex = -1;
 	let frame = 0;
+	let gridCols = 80;
+	let gridRows = 24;
+	let trainTimer: number | undefined;
 
 	function paint(force = false): void {
 		if (!terminal || !renderer) return;
@@ -101,6 +114,8 @@
 
 		if (result.effect.kind === 'clear') {
 			write(CLEAR);
+		} else if (result.effect.kind === 'train') {
+			startTrain();
 		} else {
 			write(result.effect.output);
 			if (result.effect.kind === 'open') {
@@ -113,8 +128,47 @@
 		}
 		historyIndex = -1;
 		line = '';
+		if (result.effect.kind === 'train') return;
 		write(prompt(shell));
 		schedule();
+	}
+
+	/** Play `sl` in an alternate screen, then restore the untouched transcript. */
+	function startTrain(): void {
+		interactive = false;
+		write(ENTER_ALTERNATE_SCREEN + HIDE_CURSOR);
+
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		let left = reducedMotion ? Math.floor((gridCols - TRAIN_WIDTH) / 2) : gridCols;
+		let trainFrame = 0;
+
+		const finish = (): void => {
+			trainTimer = undefined;
+			write(SHOW_CURSOR + LEAVE_ALTERNATE_SCREEN + prompt(shell));
+			schedule(true);
+			interactive = true;
+			inputEl?.focus();
+		};
+
+		const draw = (): void => {
+			write(CLEAR + renderTrainFrame(gridCols, gridRows, left, trainFrame));
+			schedule(true);
+
+			if (reducedMotion) {
+				trainTimer = window.setTimeout(finish, 700);
+				return;
+			}
+
+			left -= 2;
+			trainFrame += 1;
+			if (left <= -TRAIN_WIDTH) {
+				trainTimer = window.setTimeout(finish, 28);
+				return;
+			}
+			trainTimer = window.setTimeout(draw, 28);
+		};
+
+		draw();
 	}
 
 	function onKeyDown(event: KeyboardEvent): void {
@@ -211,6 +265,8 @@
 			return;
 		}
 		dims = `${grid.cols}×${grid.rows}`;
+		gridCols = grid.cols;
+		gridRows = grid.rows;
 		paint(true);
 	}
 
@@ -235,7 +291,9 @@
 
 		const result = run(BOOT_COMMAND, shell);
 		shell = result.state;
-		if (result.effect.kind !== 'clear') write(result.effect.output);
+		if (result.effect.kind === 'write' || result.effect.kind === 'open') {
+			write(result.effect.output);
+		}
 		write(hint() + prompt(shell));
 		schedule();
 
@@ -295,6 +353,8 @@
 
 			terminal = created.value;
 			dims = `${initial.cols}×${initial.rows}`;
+			gridCols = initial.cols;
+			gridRows = initial.rows;
 
 			observer = new ResizeObserver(() => fitToSurface());
 			observer.observe(surfaceEl);
@@ -308,6 +368,7 @@
 			disposed = true;
 			observer?.disconnect();
 			if (frame !== 0) cancelAnimationFrame(frame);
+			if (trainTimer !== undefined) window.clearTimeout(trainTimer);
 			terminal?.dispose();
 			terminal = null;
 		};

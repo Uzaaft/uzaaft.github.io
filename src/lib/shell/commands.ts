@@ -30,7 +30,8 @@ export interface ShellState {
 export type ShellEffect =
 	| { readonly kind: 'write'; readonly output: string }
 	| { readonly kind: 'clear'; readonly output: string }
-	| { readonly kind: 'open'; readonly url: string; readonly output: string };
+	| { readonly kind: 'open'; readonly url: string; readonly output: string }
+	| { readonly kind: 'train' };
 
 export interface ShellResult {
 	readonly state: ShellState;
@@ -235,6 +236,9 @@ export function run(raw: string, state: ShellState): ShellResult {
 
 		case 'ls':
 			return write(state, listDirectory(state.cwd));
+
+		case 'sl':
+			return { state, effect: { kind: 'train' } };
 
 		case 'cd': {
 			if (!arg || arg === '~' || arg === '..') return write({ cwd: '~' }, '');
