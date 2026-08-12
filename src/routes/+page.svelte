@@ -7,7 +7,8 @@
 		ENTER_ALTERNATE_SCREEN,
 		HIDE_CURSOR,
 		LEAVE_ALTERNATE_SCREEN,
-		SHOW_CURSOR
+		SHOW_CURSOR,
+		stripAnsi
 	} from '$lib/shell/ansi';
 	import {
 		banner,
@@ -48,6 +49,7 @@
 	let mirror = $state(untrack(() => data.transcript));
 	let snapshot = $state<GridSnapshot | null>(null);
 	let failure = $state<string | null>(null);
+	let announcement = $state<{ readonly id: number; readonly text: string } | null>(null);
 	/** Gates input and the chip bar until the boot animation finishes. */
 	let interactive = $state(false);
 
@@ -64,6 +66,7 @@
 	let cellWidth = $state(8);
 	let cellHeight = $state(22);
 	let trainTimer: number | undefined;
+	let announcementId = 0;
 
 	function paint(force = false): void {
 		if (!terminal || !renderer) return;
@@ -103,6 +106,23 @@
 		terminal?.writeText(bytes);
 	}
 
+	function announce(text: string): void {
+		announcementId += 1;
+		announcement = { id: announcementId, text };
+	}
+
+	function announceOutput(command: string, output: string): void {
+		const text = stripAnsi(output).replaceAll(CRLF, '\n').trim();
+		if (!text) return;
+		if (text.length <= 240) {
+			announce(text);
+			return;
+		}
+
+		const name = command.trim().split(/\s+/, 1)[0] || 'Command';
+		announce(`${name} completed. Output is available in the terminal transcript.`);
+	}
+
 	function submit(raw: string): void {
 		write(raw + CRLF);
 
@@ -111,10 +131,13 @@
 
 		if (result.effect.kind === 'clear') {
 			write(CLEAR);
+			announce('Terminal cleared.');
 		} else if (result.effect.kind === 'train') {
+			announce('Steam locomotive animation playing.');
 			startTrain();
 		} else {
 			write(result.effect.output);
+			announceOutput(raw, result.effect.output);
 			if (result.effect.kind === 'open') {
 				window.open(result.effect.url, '_blank', 'noopener,noreferrer');
 			}
@@ -144,6 +167,7 @@
 			write(SHOW_CURSOR + LEAVE_ALTERNATE_SCREEN + prompt(shell));
 			schedule(true);
 			interactive = true;
+			announce('Steam locomotive animation finished.');
 			inputEl?.focus();
 		};
 
@@ -415,6 +439,12 @@
 			<p class="failure" role="alert">{failure}</p>
 		{/if}
 
+		<div class="sr-only" aria-live="polite" aria-atomic="true">
+			{#if announcement}
+				{#key announcement.id}{announcement.text}{/key}
+			{/if}
+		</div>
+
 	</div>
 
 	<footer>
@@ -524,6 +554,18 @@
 		margin: 0;
 		font-size: 12px;
 		color: #cc6666;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	footer {

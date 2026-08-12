@@ -43,6 +43,7 @@
 <pre
 	class="terminal-transcript"
 	data-terminal-transcript
+	role="region"
 	aria-label="Terminal transcript"
 	style:--cell-height={`${cellHeight}px`}
 >
