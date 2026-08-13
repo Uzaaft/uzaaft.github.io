@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Transcript, TranscriptRun } from '$lib/shell/transcript';
+	import type { Theme } from './canvas-renderer';
 	import type { CellRun, GridSnapshot, Rgb } from './terminal';
 
 	interface Props {
@@ -7,29 +8,35 @@
 		readonly fallback: Transcript;
 		readonly cellWidth: number;
 		readonly cellHeight: number;
+		readonly theme: Theme;
 	}
 
-	let { snapshot, fallback, cellWidth, cellHeight }: Props = $props();
+	let { snapshot, fallback, cellWidth, cellHeight, theme }: Props = $props();
 
 	const cssColor = (color: Rgb): string =>
 		`rgb(${color.r} ${color.g} ${color.b})`;
 
-	function snapshotStyle(run: CellRun, grid: GridSnapshot): string {
-		const defaultForeground = cssColor(grid.foreground);
-		const defaultBackground = cssColor(grid.background);
-		const foreground = run.fg === null ? defaultForeground : cssColor(run.fg);
-		const background = run.bg === null ? defaultBackground : cssColor(run.bg);
-		const resolvedForeground = run.inverse ? background : foreground;
-		const resolvedBackground = run.inverse ? foreground : background;
+	/**
+	 * Same default substitution as the canvas renderer: libghostty reports
+	 * white-on-black, which would flash the surface from #1d1f21 to #000
+	 * the first time the live grid replaces the prerendered card.
+	 */
+	function snapshotStyle(run: CellRun): string {
+		const resolvedFg = run.fg === null ? theme.foreground : cssColor(run.fg);
+		const resolvedBg = run.bg === null ? null : cssColor(run.bg);
+		const foreground = run.inverse ? (resolvedBg ?? theme.background) : resolvedFg;
+		const background = run.inverse ? resolvedFg : resolvedBg;
 
 		return [
 			`left:${run.x * cellWidth}px`,
-			`color:${resolvedForeground}`,
-			`background:${resolvedBackground}`,
+			`color:${foreground}`,
+			background === null ? '' : `background:${background}`,
 			`font-weight:${run.bold ? 700 : 400}`,
 			`font-style:${run.italic ? 'italic' : 'normal'}`,
 			`text-decoration:${run.underline || run.uri !== null ? 'underline' : 'none'}`
-		].join(';');
+		]
+			.filter((part) => part !== '')
+			.join(';');
 	}
 
 	function fallbackStyle(run: TranscriptRun): string {
@@ -70,12 +77,12 @@
 				>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href =
 						safeHref(run.uri)}{#if href}<a
 							class="run"
-							style={snapshotStyle(run, snapshot)}
+							style={snapshotStyle(run)}
 							{href}
 							target={href.startsWith('http') ? '_blank' : undefined}
 							rel={href.startsWith('http') ? 'noreferrer' : undefined}
 							>{run.text}</a
-						>{:else}<span class="run" style={snapshotStyle(run, snapshot)}
+						>{:else}<span class="run" style={snapshotStyle(run)}
 							>{run.text}</span
 						>{/if}{/each}</span
 			>{'\n'}{/each}

@@ -505,7 +505,13 @@
 
 	<div class="surface" bind:this={surfaceEl} role="presentation">
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
-		<TerminalTranscript {snapshot} fallback={boot} {cellWidth} {cellHeight} />
+		<TerminalTranscript
+			{snapshot}
+			fallback={boot}
+			{cellWidth}
+			{cellHeight}
+			theme={THEME}
+		/>
 
 		<!-- Native editing keeps selection, mobile keyboards, and IME behavior. -->
 		<input
