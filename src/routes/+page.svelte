@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { base } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import {
@@ -20,11 +19,11 @@
 		type ShellState
 	} from '$lib/shell/commands';
 	import { CHIPS } from '$lib/shell/content';
-	import { beginSession } from '$lib/shell/session';
+	import { beginSession, type Session } from '$lib/shell/session';
+	import { parseTranscript, type Transcript } from '$lib/shell/transcript';
 	import { renderTrainFrame, TRAIN_WIDTH } from '$lib/shell/train';
-	import { CanvasRenderer, type Theme } from '$lib/vt/canvas-renderer';
-	import { VtModule } from '$lib/vt/module';
-	import { VtTerminal, type GridSnapshot } from '$lib/vt/terminal';
+	import type { CanvasRenderer, Theme } from '$lib/vt/canvas-renderer';
+	import type { GridSnapshot, VtTerminal } from '$lib/vt/terminal';
 	import TerminalTranscript from '$lib/vt/terminal-transcript.svelte';
 
 	const FONT = {
@@ -39,11 +38,6 @@
 	};
 	const DRAG_THRESHOLD_PX = 4;
 
-	// Start the wasm fetch as soon as this module evaluates, in parallel with
-	// layout and the preloaded font. Waiting until onMount used to serialize
-	// it behind font loading and a typewriter replay.
-	const wasmModule = browser ? VtModule.load(`${base}/ghostty-vt.wasm`) : null;
-
 	let canvasEl: HTMLCanvasElement | undefined = $state();
 	let surfaceEl: HTMLDivElement | undefined = $state();
 	let inputEl: HTMLInputElement | undefined = $state();
@@ -52,20 +46,20 @@
 
 	let dims = $state('—');
 	/**
-	 * Starts as the prerendered boot transcript so the page is readable before
-	 * wasm loads, then tracks the live grid.
+	 * Colored boot card, prerendered so first paint does not wait on wasm.
+	 * Replaced by the live grid only after the first command.
 	 *
 	 * `untrack` because seeding once is the intent: the route is prerendered and
 	 * never re-navigated to, and after boot this belongs to the renderer.
 	 */
-	let mirror = $state(untrack(() => data.transcript));
+	let boot = $state<Transcript>(untrack(() => data.transcript));
 	let snapshot = $state<GridSnapshot | null>(null);
 	let failure = $state<string | null>(null);
 	let announcement = $state<{
 		readonly id: number;
 		readonly text: string;
 	} | null>(null);
-	/** Gates input and the chip bar until the live VT is ready. */
+	/** Chips and the capture input. True as soon as the client mounts. */
 	let interactive = $state(false);
 
 	/** Non-reactive engine state: mutating these must never trigger a re-render. */
@@ -86,9 +80,16 @@
 	let pointerOriginX = 0;
 	let pointerOriginY = 0;
 	let sawPointerDown = false;
+	let session: Session = null;
+	let engine: Promise<void> | null = null;
+	let live = false;
+	const queued: string[] = [];
+	let disposed = false;
+
+	const caret = $derived(snapshot?.cursor ?? boot.cursor);
 
 	function paint(force = false): void {
-		if (!terminal || !renderer) return;
+		if (!live || !terminal || !renderer) return;
 		const result = terminal.snapshot();
 		if (result._tag === 'err') {
 			failure = result.error.message;
@@ -96,7 +97,6 @@
 		}
 		renderer.draw(result.value, force);
 		snapshot = result.value;
-		updateMirror(snapshot);
 	}
 
 	/** Schedule a repaint on the next frame, coalescing bursts of writes. */
@@ -106,19 +106,6 @@
 			frame = 0;
 			paint(force);
 		});
-	}
-
-	/** Mirror the grid as text for screen readers and crawlers. */
-	function updateMirror(snapshot: GridSnapshot): void {
-		const rows: string[] = [];
-		for (const row of snapshot.lines) {
-			const text = row.runs
-				.map((r) => r.text)
-				.join('')
-				.replace(/\s+$/, '');
-			if (text) rows.push(text);
-		}
-		mirror = rows.join('\n');
 	}
 
 	function write(bytes: string): void {
@@ -145,6 +132,18 @@
 	}
 
 	function submit(raw: string): void {
+		if (!terminal) {
+			if (raw.trim()) {
+				history = [raw.trim(), ...history].slice(0, 50);
+				queued.push(raw);
+			}
+			historyIndex = -1;
+			line = '';
+			void startEngine();
+			return;
+		}
+
+		live = true;
 		write(raw + CRLF);
 
 		const result = run(raw, shell);
@@ -228,6 +227,11 @@
 
 		if (event.key === 'l' && event.ctrlKey) {
 			event.preventDefault();
+			if (!terminal) {
+				void startEngine();
+				return;
+			}
+			live = true;
 			write(CLEAR + prompt(shell));
 			schedule(true);
 			return;
@@ -245,6 +249,11 @@
 			if (completion.kind === 'single') {
 				line = completion.input;
 			} else if (completion.kind === 'many') {
+				if (!terminal) {
+					void startEngine();
+					return;
+				}
+				live = true;
 				write(
 					line + CRLF + completion.matches.join('  ') + CRLF + prompt(shell)
 				);
@@ -340,84 +349,126 @@
 		paint(true);
 	}
 
-	/** Seed the VT with the same transcript the prerendered HTML already shows. */
-	function playBoot(): void {
-		// Recorded once per page load, before anything is drawn, so the banner
-		// reports the visit before this one rather than this one.
-		write(bootOutput(beginSession(new Date())));
-		schedule();
-		interactive = true;
-		inputEl?.focus();
+	function measureFallback(): void {
+		if (!canvasEl) return;
+		const ctx = canvasEl.getContext('2d');
+		if (!ctx) return;
+		ctx.font = `${FONT.sizePx}px ${FONT.family}`;
+		cellWidth = ctx.measureText('M').width;
+		cellHeight = Math.round(FONT.sizePx * FONT.lineHeight);
 	}
 
-	onMount(() => {
-		let disposed = false;
-		let observer: ResizeObserver | undefined;
+	function startEngine(): Promise<void> {
+		engine ??= loadEngine();
+		return engine;
+	}
 
-		document.addEventListener('pointerdown', rememberPointerOrigin);
-		document.addEventListener('click', focusInputFromClick);
+	/**
+	 * Fetch wasm and stand the VT up after first paint. The prerendered card
+	 * stays on screen; the live grid only replaces it when a command runs.
+	 */
+	async function loadEngine(): Promise<void> {
+		if (!canvasEl || !surfaceEl) {
+			engine = null;
+			return;
+		}
 
-		const boot = async (): Promise<void> => {
-			if (!canvasEl || !surfaceEl) return;
+		const ctx = canvasEl.getContext('2d');
+		if (!ctx) {
+			failure = 'This browser has no 2D canvas context.';
+			return;
+		}
 
-			const ctx = canvasEl.getContext('2d');
-			if (!ctx) {
-				failure = 'This browser has no 2D canvas context.';
-				return;
-			}
-
-			// Regular is the only face we measure. Bold and italic share its
-			// pitch, so they can finish after first paint. A failure here is
-			// not fatal — the fallback still renders, just at a different pitch.
-			const [loaded] = await Promise.all([
-				wasmModule ?? VtModule.load(`${base}/ghostty-vt.wasm`),
+		const [{ CanvasRenderer: Renderer }, { VtModule }, { VtTerminal: Terminal }] =
+			await Promise.all([
+				import('$lib/vt/canvas-renderer'),
+				import('$lib/vt/module'),
+				import('$lib/vt/terminal'),
 				document.fonts
 					.load(`${FONT.sizePx}px ${FONT.family}`)
 					.catch(() => undefined)
 			]);
-			if (loaded._tag === 'err') {
-				failure = loaded.error.message;
-				return;
-			}
-			if (disposed) return;
+		if (disposed) return;
 
-			renderer = new CanvasRenderer(canvasEl, ctx, FONT, THEME);
-			const initial = renderer.resize(
-				surfaceEl.getBoundingClientRect().width,
-				surfaceEl.getBoundingClientRect().height
-			);
+		const loaded = await VtModule.load(`${base}/ghostty-vt.wasm`);
+		if (loaded._tag === 'err') {
+			failure = loaded.error.message;
+			return;
+		}
+		if (disposed) return;
 
-			const created = VtTerminal.create(
-				loaded.value,
-				initial.cols,
-				initial.rows
-			);
-			if (created._tag === 'err') {
-				failure = created.error.message;
-				return;
-			}
-			if (disposed) {
-				created.value.dispose();
-				return;
-			}
+		renderer = new Renderer(canvasEl, ctx, FONT, THEME);
+		const initial = renderer.resize(
+			surfaceEl.getBoundingClientRect().width,
+			surfaceEl.getBoundingClientRect().height
+		);
 
-			terminal = created.value;
-			dims = `${initial.cols}×${initial.rows}`;
-			gridCols = initial.cols;
-			gridRows = initial.rows;
-			cellWidth = renderer.cell.width;
-			cellHeight = renderer.cell.height;
+		const created = Terminal.create(loaded.value, initial.cols, initial.rows);
+		if (created._tag === 'err') {
+			failure = created.error.message;
+			return;
+		}
+		if (disposed) {
+			created.value.dispose();
+			return;
+		}
 
-			observer = new ResizeObserver(() => fitToSurface());
+		terminal = created.value;
+		dims = `${initial.cols}×${initial.rows}`;
+		gridCols = initial.cols;
+		gridRows = initial.rows;
+		cellWidth = renderer.cell.width;
+		cellHeight = renderer.cell.height;
+
+		write(bootOutput(session));
+
+		const pending = queued.splice(0);
+		for (const raw of pending) submit(raw);
+	}
+
+	onMount(() => {
+		let observer: ResizeObserver | undefined;
+		let idleId = 0;
+
+		// Recorded once, before anything is drawn, so the banner reports the
+		// visit before this one rather than this one.
+		session = beginSession(new Date());
+		boot = parseTranscript(bootOutput(session));
+
+		measureFallback();
+		void document.fonts
+			.load(`${FONT.sizePx}px ${FONT.family}`)
+			.then(() => {
+				if (!disposed && !renderer) measureFallback();
+			})
+			.catch(() => undefined);
+
+		interactive = true;
+		inputEl?.focus();
+
+		document.addEventListener('pointerdown', rememberPointerOrigin);
+		document.addEventListener('click', focusInputFromClick);
+
+		if (surfaceEl) {
+			observer = new ResizeObserver(() => {
+				if (renderer && terminal) fitToSurface();
+				else measureFallback();
+			});
 			observer.observe(surfaceEl);
+		}
 
-			playBoot();
-		};
-
-		void boot();
+		// Two frames: first paint is the prerendered card. Then start wasm
+		// without competing for the first-paint bandwidth.
+		idleId = requestAnimationFrame(() => {
+			idleId = requestAnimationFrame(() => {
+				idleId = 0;
+				void startEngine();
+			});
+		});
 
 		return () => {
 			disposed = true;
+			if (idleId !== 0) cancelAnimationFrame(idleId);
 			document.removeEventListener('pointerdown', rememberPointerOrigin);
 			document.removeEventListener('click', focusInputFromClick);
 			observer?.disconnect();
@@ -454,7 +505,7 @@
 
 	<div class="surface" bind:this={surfaceEl} role="presentation">
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
-		<TerminalTranscript {snapshot} fallback={mirror} {cellWidth} {cellHeight} />
+		<TerminalTranscript {snapshot} fallback={boot} {cellWidth} {cellHeight} />
 
 		<!-- Native editing keeps selection, mobile keyboards, and IME behavior. -->
 		<input
@@ -463,8 +514,8 @@
 			onkeydown={onKeyDown}
 			class="capture"
 			disabled={!interactive}
-			style:left={`${(snapshot?.cursor?.x ?? 0) * cellWidth}px`}
-			style:top={`${(snapshot?.cursor?.y ?? 0) * cellHeight}px`}
+			style:left={`${caret.x * cellWidth}px`}
+			style:top={`${caret.y * cellHeight}px`}
 			style:height={`${cellHeight}px`}
 			style:line-height={`${cellHeight}px`}
 			spellcheck="false"

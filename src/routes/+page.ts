@@ -1,25 +1,17 @@
-import { stripAnsi } from '$lib/shell/ansi';
 import { bootOutput } from '$lib/shell/commands';
+import { parseTranscript, type Transcript } from '$lib/shell/transcript';
 
 /**
- * Render the boot transcript as plain text at build time.
+ * Render the boot transcript as styled runs at build time.
  *
- * The grid itself is painted to a canvas, which crawlers and screen readers
- * cannot see, and the live mirror only fills in once wasm has loaded. This
- * gives the prerendered HTML the same content the terminal opens with, so the
- * page says something real without JavaScript.
+ * The live grid is a wasm VT, but first paint is this prerendered HTML so
+ * the card is colored and readable before any JavaScript or wasm runs.
  *
- * The shell layer is pure, so this is the same code path the browser runs —
- * there is no second copy of the content to keep in sync.
+ * The shell layer is pure, so this is the same byte stream the browser
+ * later feeds the terminal — there is no second copy of the content.
  */
-export function load(): { readonly transcript: string } {
+export function load(): { readonly transcript: Transcript } {
 	// No previous login at build time — the prerendered transcript is what a
 	// first-time visitor sees, which is also what a crawler should read.
-	return {
-		transcript: stripAnsi(bootOutput(null))
-			.split('\r\n')
-			.map((line) => line.replace(/\s+$/, ''))
-			.join('\n')
-			.trim()
-	};
+	return { transcript: parseTranscript(bootOutput(null)) };
 }

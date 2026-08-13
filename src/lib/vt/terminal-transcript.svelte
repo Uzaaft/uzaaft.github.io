@@ -1,9 +1,10 @@
 <script lang="ts">
+	import type { Transcript, TranscriptRun } from '$lib/shell/transcript';
 	import type { CellRun, GridSnapshot, Rgb } from './terminal';
 
 	interface Props {
 		readonly snapshot: GridSnapshot | null;
-		readonly fallback: string;
+		readonly fallback: Transcript;
 		readonly cellWidth: number;
 		readonly cellHeight: number;
 	}
@@ -13,7 +14,7 @@
 	const cssColor = (color: Rgb): string =>
 		`rgb(${color.r} ${color.g} ${color.b})`;
 
-	function runStyle(run: CellRun, grid: GridSnapshot): string {
+	function snapshotStyle(run: CellRun, grid: GridSnapshot): string {
 		const defaultForeground = cssColor(grid.foreground);
 		const defaultBackground = cssColor(grid.background);
 		const foreground = run.fg === null ? defaultForeground : cssColor(run.fg);
@@ -28,6 +29,16 @@
 			`font-weight:${run.bold ? 700 : 400}`,
 			`font-style:${run.italic ? 'italic' : 'normal'}`,
 			`text-decoration:${run.underline || run.uri !== null ? 'underline' : 'none'}`
+		].join(';');
+	}
+
+	function fallbackStyle(run: TranscriptRun): string {
+		return [
+			`left:${run.x * cellWidth}px`,
+			`color:${run.color ?? '#c5c8c6'}`,
+			`font-weight:${run.bold ? 700 : 400}`,
+			`font-style:${run.italic ? 'italic' : 'normal'}`,
+			`text-decoration:${run.uri !== null ? 'underline' : 'none'}`
 		].join(';');
 	}
 
@@ -59,17 +70,31 @@
 				>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href =
 						safeHref(run.uri)}{#if href}<a
 							class="run"
-							style={runStyle(run, snapshot)}
+							style={snapshotStyle(run, snapshot)}
 							{href}
 							target={href.startsWith('http') ? '_blank' : undefined}
 							rel={href.startsWith('http') ? 'noreferrer' : undefined}
 							>{run.text}</a
-						>{:else}<span class="run" style={runStyle(run, snapshot)}
+						>{:else}<span class="run" style={snapshotStyle(run, snapshot)}
 							>{run.text}</span
 						>{/if}{/each}</span
 			>{'\n'}{/each}
 	{:else}
-		{fallback}
+		{#each fallback.lines as row (row.y)}<span
+				class="row"
+				style:top={`${row.y * cellHeight}px`}
+				>{#each row.runs as run, index (`${run.x}:${index}`)}{@const href =
+						safeHref(run.uri)}{#if href}<a
+							class="run"
+							style={fallbackStyle(run)}
+							{href}
+							target={href.startsWith('http') ? '_blank' : undefined}
+							rel={href.startsWith('http') ? 'noreferrer' : undefined}
+							>{run.text}</a
+						>{:else}<span class="run" style={fallbackStyle(run)}
+							>{run.text}</span
+						>{/if}{/each}</span
+			>{'\n'}{/each}
 	{/if}
 </pre>
 
