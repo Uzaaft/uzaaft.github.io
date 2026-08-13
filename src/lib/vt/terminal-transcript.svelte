@@ -13,8 +13,17 @@
 
 	let { snapshot, fallback, cellWidth, cellHeight, theme }: Props = $props();
 
-	const cssColor = (color: Rgb): string =>
-		`rgb(${color.r} ${color.g} ${color.b})`;
+	/**
+	 * Ghostty's default bright black is #666666; Tomorrow Night (and the
+	 * prerendered card) uses #969896. Remap so dim text does not flash
+	 * when the live grid replaces the fallback.
+	 */
+	function cssColor(color: Rgb): string {
+		if (color.r === 0x66 && color.g === 0x66 && color.b === 0x66) {
+			return '#969896';
+		}
+		return `rgb(${color.r} ${color.g} ${color.b})`;
+	}
 
 	/**
 	 * Same default substitution as the canvas renderer: libghostty reports
