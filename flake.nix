@@ -4,10 +4,11 @@
     systems.url = "github:nix-systems/default";
 
     # libghostty-vt, compiled to wasm, paints the terminal grid on the site.
-    # Pinned to a commit: lib_vt.zig warns the C API may change without warning
-    # pre-1.0, and we read struct layouts out of it at runtime.
+    # flake.lock is the pin; bump deliberately with `nix flake update ghostty`:
+    # lib_vt.zig warns the C API may change without warning pre-1.0, and we
+    # read struct layouts out of it at runtime.
     ghostty = {
-      url = "github:ghostty-org/ghostty/136f436a3bbb14fd48d18e927a83fc6585d5a63c";
+      url = "github:ghostty-org/ghostty";
       flake = false;
     };
 
@@ -56,7 +57,7 @@
     in rec {
       ghostty-vt-wasm = pkgs.stdenv.mkDerivation {
         pname = "ghostty-vt-wasm";
-        version = "0-unstable-136f436";
+        version = "0-unstable-${builtins.substring 0 7 (ghostty.rev or "dirty")}";
         src = ghostty;
 
         nativeBuildInputs = [zigPkg];
