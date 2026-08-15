@@ -40,7 +40,9 @@
 
 	let canvasEl: HTMLCanvasElement | undefined = $state();
 	let surfaceEl: HTMLDivElement | undefined = $state();
-	let inputEl: HTMLInputElement | undefined = $state();
+	// A textarea, not an input: Safari Keychain (and most password managers)
+	// only annotate <input> elements, so a textarea never gets the key icon.
+	let captureEl: HTMLTextAreaElement | undefined = $state();
 
 	let { data } = $props();
 
@@ -59,7 +61,7 @@
 		readonly id: number;
 		readonly text: string;
 	} | null>(null);
-	/** Chips and the capture input. True as soon as the client mounts. */
+	/** Chips and the capture editor. True as soon as the client mounts. */
 	let interactive = $state(false);
 
 	/** Non-reactive engine state: mutating these must never trigger a re-render. */
@@ -192,7 +194,7 @@
 			schedule(true);
 			interactive = true;
 			announce('Steam locomotive animation finished.');
-			inputEl?.focus();
+			captureEl?.focus();
 		};
 
 		const draw = (): void => {
@@ -280,11 +282,21 @@
 		}
 	}
 
-	function runChip(command: string): void {
-		if (!interactive) return;
+	/**
+	 * Pasted or dropped text can carry newlines, which a single terminal line
+	 * cannot. Enter is already preventDefault'd in onKeyDown, so paste is the
+	 * only source. Reassign only on change: an unconditional set would move
+	 * the caret to the end on every keystroke.
+	 */
+	function stripPastedNewlines(): void {
+		const cleaned = line.replace(/[\r\n]+/g, ' ');
+		if (cleaned !== line) line = cleaned;
+	}
+
+	function runChip(command: string): void {		if (!interactive) return;
 		line = command;
 		submit(command);
-		inputEl?.focus();
+		captureEl?.focus();
 	}
 
 	function rememberPointerOrigin(event: PointerEvent): void {
@@ -296,13 +308,13 @@
 	/** Click the chrome or transcript to type. Skip links, buttons, and drag-selects. */
 	function focusInputFromClick(event: MouseEvent): void {
 		if (!(event.target instanceof Element)) return;
-		if (event.target.closest('a, button, input')) return;
+		if (event.target.closest('a, button, textarea')) return;
 		if (sawPointerDown) {
 			const dx = event.clientX - pointerOriginX;
 			const dy = event.clientY - pointerOriginY;
 			if (dx * dx + dy * dy > DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) return;
 		}
-		inputEl?.focus();
+		captureEl?.focus();
 	}
 
 	/**
@@ -310,8 +322,8 @@
 	 * Reclaim it so you can just start typing.
 	 */
 	function onPageKeyDown(event: KeyboardEvent): void {
-		if (!interactive || !inputEl || inputEl.disabled) return;
-		if (document.activeElement === inputEl) return;
+		if (!interactive || !captureEl || captureEl.disabled) return;
+		if (document.activeElement === captureEl) return;
 		if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey)
 			return;
 		if (event.key.length !== 1) return;
@@ -323,7 +335,7 @@
 		}
 
 		event.preventDefault();
-		inputEl.focus();
+		captureEl.focus();
 		line += event.key;
 	}
 
@@ -444,7 +456,7 @@
 			.catch(() => undefined);
 
 		interactive = true;
-		inputEl?.focus();
+		captureEl?.focus();
 
 		document.addEventListener('pointerdown', rememberPointerOrigin);
 		document.addEventListener('click', focusInputFromClick);
@@ -514,11 +526,14 @@
 		/>
 
 		<!-- Native editing keeps selection, mobile keyboards, and IME behavior. -->
-		<input
-			bind:this={inputEl}
+		<textarea
+			bind:this={captureEl}
 			bind:value={line}
 			onkeydown={onKeyDown}
+			oninput={stripPastedNewlines}
 			class="capture"
+			rows="1"
+			wrap="off"
 			disabled={!interactive}
 			style:left={`${caret.x * cellWidth}px`}
 			style:top={`${caret.y * cellHeight}px`}
@@ -527,9 +542,13 @@
 			spellcheck="false"
 			autocomplete="off"
 			autocapitalize="off"
+			data-1p-ignore
+			data-lpignore="true"
+			data-bwignore
+			data-form-type="other"
 			aria-label="Terminal command"
 			aria-describedby="terminal-hint"
-		/>
+		></textarea>
 
 		{#if failure}
 			<p class="failure" role="alert">{failure}</p>
@@ -657,7 +676,11 @@
 		box-sizing: border-box;
 		border: none;
 		outline: none;
+		margin: 0;
 		padding: 0;
+		resize: none;
+		overflow: hidden;
+		white-space: nowrap;
 		background: transparent;
 		color: #c5c8c6;
 		caret-color: #f0c674;
