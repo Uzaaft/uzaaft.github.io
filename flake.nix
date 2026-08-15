@@ -60,7 +60,7 @@
         version = "0-unstable-${builtins.substring 0 7 (ghostty.rev or "dirty")}";
         src = ghostty;
 
-        nativeBuildInputs = [zigPkg];
+        nativeBuildInputs = [zigPkg pkgs.binaryen];
 
         dontConfigure = true;
         doCheck = false;
@@ -68,6 +68,15 @@
         # -Dsimd=false is required, not a preference: simdutf fails to compile
         # for wasm32-freestanding. ghostty's own nix/libghostty-vt.nix hardcodes
         # simd=true and targets the host, which is why we can't just reuse it.
+        #
+        # -Dvt-features compiles out the C API surface the site never calls
+        # (snapshot, formatter, selection, key/mouse encode, kitty graphics):
+        # roughly 30% of the binary. The kept set is exactly what
+        # src/lib/vt/module.ts validates at load: terminal lifecycle, vt_write,
+        # resize, render_state, grid_ref hyperlinks, and colors. If a future
+        # site feature needs a gated API (say ghostty_key_encoder_*), the build
+        # still succeeds but module.ts's export check fails loudly at startup;
+        # re-enable the matching feature here.
         buildPhase = ''
           runHook preBuild
 
@@ -78,14 +87,32 @@
             -Dapp-runtime=none \
             -Demit-lib-vt=true \
             -Dtarget=wasm32-freestanding \
-            -Dsimd=false
+            -Dsimd=false \
+            -Dvt-features=-all,+render-state,+grid-introspection,+color
 
           runHook postBuild
         '';
 
+        # wasm-opt -Oz shaves ~11% off the zig linker output (mostly dead
+        # locals and CFG simplification LLVM leaves behind). The feature
+        # flags enumerate exactly what zig 0.16 emits for this target (see the
+        # target_features section of an unstripped build): --detect-features
+        # finds nothing because release builds strip that section. If a zig
+        # upgrade adds a feature, wasm-opt's validator fails the build loudly
+        # rather than silently miscompiling; extend the list then.
         installPhase = ''
           runHook preInstall
-          install -Dm444 zig-out/bin/ghostty-vt.wasm "$out/ghostty-vt.wasm"
+          wasm-opt -Oz \
+            --enable-bulk-memory \
+            --enable-extended-const \
+            --enable-multivalue \
+            --enable-mutable-globals \
+            --enable-nontrapping-float-to-int \
+            --enable-sign-ext \
+            --enable-simd \
+            --enable-call-indirect-overlong \
+            zig-out/bin/ghostty-vt.wasm -o ghostty-vt-opt.wasm
+          install -Dm444 ghostty-vt-opt.wasm "$out/ghostty-vt.wasm"
           runHook postInstall
         '';
 
