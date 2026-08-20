@@ -31,7 +31,7 @@ export const BEAVER: readonly string[] = [
 export const fetchRows: readonly { readonly label: string; readonly value: string }[] = [
 	{ label: 'Role', value: 'Software engineer @ Polymath' },
 	{ label: 'Location', value: 'Oslo, Norway' },
-	{ label: 'Tools', value: 'zsh · neovim · ghostty' },
+	{ label: 'Tools', value: 'rush · neovim · ghostty' },
 	{ label: 'Languages', value: 'Rust · Zig · Lua · TypeScript' },
 	{ label: 'Currently', value: 'developer tooling, tackling engineering problems' },
 	{ label: 'Education', value: 'NMBU' }
@@ -75,7 +75,7 @@ export const helpEntries: readonly { readonly usage: string; readonly blurb: str
 	{ usage: 'ls', blurb: 'list the current directory' },
 	{ usage: 'sl', blurb: 'you meant ls, right?' },
 	{ usage: 'cd <dir>', blurb: 'projects · blog' },
-	{ usage: 'cat <file>', blurb: 'about.md · now.md · contact.md · .zshrc' },
+	{ usage: 'cat <file>', blurb: 'about.md · now.md · contact.md · .rushrc' },
 	{ usage: 'blog', blurb: 'recent writing' },
 	{ usage: 'projects', blurb: 'open source' },
 	{ usage: 'open <x>', blurb: 'github · linkedin · blog · crates · email' },
@@ -111,7 +111,7 @@ export const sayings = {
 	whoami:
 		'Uzair Aftab — software engineer in Oslo, Norway. Rust, Zig, and developer tooling.',
 	contactNote: "Email is best. I read everything, though I don't always reply quickly.",
-	zshrc: 'alias vim="nvim"   # you were expecting secrets?',
+	rushrc: 'abbr --add vim nvim   # you were expecting secrets?',
 	cvBinary: 'cat: cv.pdf: binary file (try `open email` and just ask)',
 	theme:
 		"Ghostty default (Tomorrow Night). The grid you're reading is painted by libghostty-vt compiled to wasm.",

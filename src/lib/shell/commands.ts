@@ -1,12 +1,11 @@
 /**
- * The shell's command interpreter.
+ * Site commands and boot presentation loaded into the Rush shell.
  *
- * A Domain Module: pure functions from input to VT bytes. It performs no I/O
- * and knows nothing about wasm, canvas, or the DOM — opening a URL is returned
- * as an effect for the imperative shell to carry out.
+ * Rush owns parsing, expansion, state, and evaluation. This module only turns
+ * portfolio content into Rush function definitions and prerenderable VT bytes.
  */
 
-import { bold, boldFg, Color, CRLF, fg, lines, link } from './ansi';
+import { bold, boldFg, Color, CRLF, fg, lines, link, RESET } from './ansi';
 import type { PreviousLogin } from './session';
 import {
 	about,
@@ -23,39 +22,17 @@ import {
 	urls
 } from './content';
 
-export interface ShellState {
-	readonly cwd: string;
-}
-
-export type ShellEffect =
-	| { readonly kind: 'write'; readonly output: string }
-	| { readonly kind: 'clear'; readonly output: string }
-	| { readonly kind: 'open'; readonly url: string; readonly output: string }
-	| { readonly kind: 'train' };
-
-export interface ShellResult {
-	readonly state: ShellState;
-	readonly effect: ShellEffect;
-}
-
-export const initialState: ShellState = { cwd: '~' };
-
-/** The prompt, e.g. `uzaaft@bobr:~$ `. */
-export function prompt(state: ShellState): string {
+/** Render the site prompt for a display path, e.g. `uzaaft@bobr:~$ `. */
+export function prompt(cwd: string): string {
 	return (
 		boldFg(Color.Green, `${host.user}@${host.machine}`) +
 		fg(Color.Dim, ':') +
-		fg(Color.Blue, state.cwd) +
+		fg(Color.Blue, cwd) +
 		fg(Color.Dim, '$ ')
 	);
 }
 
 const pad = (text: string, width: number): string => text.padEnd(width, ' ');
-
-const write = (state: ShellState, output: string): ShellResult => ({
-	state,
-	effect: { kind: 'write', output }
-});
 
 /** Command the live terminal runs on a fresh load. */
 export const BOOT_COMMAND = 'fastfetch';
@@ -115,17 +92,15 @@ export function fastfetch(): string {
  * the live VT so hydration paints the same grid the HTML already showed.
  */
 export function bootOutput(previous: PreviousLogin | null): string {
-	const result = run(BOOT_COMMAND, initialState);
-	const output =
-		result.effect.kind === 'write' || result.effect.kind === 'open' ? result.effect.output : '';
 	return (
 		banner(previous) +
-		prompt(initialState) +
+		prompt('~') +
 		BOOT_COMMAND +
 		CRLF +
-		output +
+		fastfetch() +
+		CRLF +
 		hint() +
-		prompt(initialState)
+		prompt('~')
 	);
 }
 
@@ -212,7 +187,7 @@ function listDirectory(cwd: string): string {
 		[
 			fg(Color.Cyan, pad('projects/', 14)),
 			fg(Color.Cyan, pad('blog/', 14)),
-			fg(Color.Dim, '.zshrc')
+			fg(Color.Dim, '.rushrc')
 		].join(''),
 		''
 	);
@@ -229,21 +204,18 @@ function contact(): string {
 	);
 }
 
-function readFile(name: string, state: ShellState): ShellResult {
+function readFile(name: string): string {
 	if (name.startsWith('about')) {
-		return write(state, lines(boldFg(Color.Yellow, '# about'), '', ...about, ''));
+		return lines(boldFg(Color.Yellow, '# about'), '', ...about, '');
 	}
 	if (name.startsWith('now')) {
-		return write(state, lines(boldFg(Color.Yellow, '# now'), '', ...now, ''));
+		return lines(boldFg(Color.Yellow, '# now'), '', ...now, '');
 	}
-	if (name.startsWith('contact')) return write(state, contact());
-	if (name === '.zshrc') return write(state, lines(fg(Color.Dim, sayings.zshrc), ''));
-	if (name === 'cv.pdf') return write(state, lines(fg(Color.Red, sayings.cvBinary), ''));
-	if (!name) return write(state, lines(fg(Color.Red, 'cat: missing operand'), ''));
-	return write(
-		state,
-		lines(fg(Color.Red, `cat: ${name}: No such file or directory`), '')
-	);
+	if (name.startsWith('contact')) return contact();
+	if (name === '.rushrc') return lines(fg(Color.Dim, sayings.rushrc), '');
+	if (name === 'cv.pdf') return lines(fg(Color.Red, sayings.cvBinary), '');
+	if (!name) return lines(fg(Color.Red, 'cat: missing operand'), '');
+	return lines(fg(Color.Red, `cat: ${name}: No such file or directory`), '');
 }
 
 const OPEN_TARGETS: Readonly<Record<string, string>> = {
@@ -256,129 +228,86 @@ const OPEN_TARGETS: Readonly<Record<string, string>> = {
 	email: urls.email
 };
 
-/**
- * Interpret one command line.
- *
- * Returns the next state plus the effect to apply. A blank line still produces
- * a `write` effect so the caller re-emits the prompt uniformly.
- */
-export function run(raw: string, state: ShellState): ShellResult {
-	const command = raw.trim();
-	if (!command) return write(state, '');
+const shellLiteral = (value: string): string => `'${value.replaceAll("'", `'"'"'`)}'`;
 
-	const parts = command.split(/\s+/);
-	const head = (parts[0] ?? '').toLowerCase();
-	const argument = parts
-		.slice(1)
-		.join(' ')
-		.replace(/^\.\//, '')
-		.replace(/\/$/, '');
-	const arg = argument.toLowerCase();
+const printFunction = (name: string, output: string): string =>
+	`${name}() { printf '%s' ${shellLiteral(output)}; }`;
 
-	switch (head) {
-		case 'help':
-			return write(state, help());
+const blogOutput = lines(
+	...posts.map(
+		(post) => fg(Color.Dim, post.date + '  ') + post.title + fg(Color.Dim, '   ' + post.minutes)
+	),
+	'',
+	fg(Color.Green, 'open blog') + fg(Color.Dim, ' to read them'),
+	''
+);
 
-		case 'whoami':
-			return write(state, lines(sayings.whoami, ''));
+const projectsOutput = lines(
+	...projects.map(
+		(project) =>
+			fg(Color.Cyan, pad(project.name, 17)) +
+			fg(Color.Dim, pad(project.language, 6)) +
+			project.description
+	),
+	''
+);
 
-		case 'fastfetch':
-			return write(state, fastfetch() + CRLF);
+const effectMarker = (kind: 'open' | 'train', payload = ''): string =>
+	`\x1b]777;uzaaft;${kind};${encodeURIComponent(payload)}\x07`;
 
-		case 'ls':
-			return write(state, listDirectory(state.cwd));
-
-		case 'sl':
-			return { state, effect: { kind: 'train' } };
-
-		case 'cd': {
-			if (!arg || arg === '~' || arg === '..') return write({ cwd: '~' }, '');
-			if (arg === 'blog' || arg === 'projects') return write({ cwd: `~/${arg}` }, '');
-			return write(
-				state,
-				lines(fg(Color.Red, `cd: no such file or directory: ${argument}`), '')
-			);
-		}
-
-		case 'cat':
-			return readFile(arg, state);
-
-		case 'blog':
-			return write(
-				state,
-				lines(
-					...posts.map(
-						(post) =>
-							fg(Color.Dim, post.date + '  ') +
-							post.title +
-							fg(Color.Dim, '   ' + post.minutes)
-					),
-					'',
-					fg(Color.Green, 'open blog') + fg(Color.Dim, ' to read them'),
-					''
+/** Rush source evaluated once to install the portfolio's virtual commands. */
+export const RUSH_INIT_SCRIPT = [
+	'HOME=/; export HOME',
+	printFunction('help', help()),
+	printFunction('whoami', lines(sayings.whoami, '')),
+	printFunction('fastfetch', fastfetch() + CRLF),
+	`ls() {
+		case "$PWD" in
+			/blog) printf '%s' ${shellLiteral(listDirectory('~/blog'))} ;;
+			/projects) printf '%s' ${shellLiteral(listDirectory('~/projects'))} ;;
+			*) printf '%s' ${shellLiteral(listDirectory('~'))} ;;
+		esac
+	}`,
+	printFunction('sl', effectMarker('train')),
+	`cat() {
+		case "$1" in
+			about*) printf '%s' ${shellLiteral(readFile('about'))} ;;
+			now*) printf '%s' ${shellLiteral(readFile('now'))} ;;
+			contact*) printf '%s' ${shellLiteral(readFile('contact'))} ;;
+			.rushrc) printf '%s' ${shellLiteral(readFile('.rushrc'))} ;;
+			cv.pdf) printf '%s' ${shellLiteral(readFile('cv.pdf'))} ;;
+			'') printf '%s' ${shellLiteral(readFile(''))} ;;
+			*) printf '%s%s%s' ${shellLiteral(`\x1b[${Color.Red}mcat: `)} "$1" ${shellLiteral(`: No such file or directory${RESET}${CRLF}${CRLF}`)} ;;
+		esac
+	}`,
+	printFunction('blog', blogOutput),
+	printFunction('projects', projectsOutput),
+	printFunction('contact', contact()),
+	`open() {
+		case "$1" in
+			${Object.entries(OPEN_TARGETS)
+				.map(
+					([target, url]) =>
+						`${target}) printf '%s' ${shellLiteral(lines(fg(Color.Dim, 'opening ') + link(url, url) + fg(Color.Dim, ' …'), '') + effectMarker('open', url))} ;;`
 				)
-			);
-
-		case 'projects':
-			return write(
-				state,
-				lines(
-					...projects.map(
-						(project) =>
-							fg(Color.Cyan, pad(project.name, 17)) +
-							fg(Color.Dim, pad(project.language, 6)) +
-							project.description
-					),
-					''
-				)
-			);
-
-		case 'contact':
-			return write(state, contact());
-
-		case 'open': {
-			const url = OPEN_TARGETS[arg];
-			if (!url) {
-				return write(
-					state,
-					lines(fg(Color.Red, `open: unknown target ‘${argument}’`), '')
-				);
-			}
-			return {
-				state,
-				effect: {
-					kind: 'open',
-					url,
-					output: lines(fg(Color.Dim, 'opening ') + link(url, url) + fg(Color.Dim, ' …'), '')
-				}
-			};
-		}
-
-		case 'theme':
-			return write(state, lines(fg(Color.Magenta, sayings.theme), ''));
-
-		case 'sudo':
-			return write(state, lines(fg(Color.Red, sayings.sudo), ''));
-
-		case 'exit':
-		case 'q':
-		case ':q':
-			return write(state, lines(fg(Color.Yellow, sayings.exit), ''));
-
-		case 'clear':
-			return { state, effect: { kind: 'clear', output: '' } };
-
-		default:
-			return write(
-				state,
-				lines(
-					fg(Color.Red, `zsh: command not found: ${head}`),
-					fg(Color.Dim, 'try ') + fg(Color.Green, 'help'),
-					''
-				)
-			);
-	}
-}
+				.join('\n')}
+			*) printf '%s%s%s' ${shellLiteral(`\x1b[${Color.Red}mopen: unknown target ‘`)} "$*" ${shellLiteral(`’${RESET}${CRLF}${CRLF}`)} ; return 1 ;;
+		esac
+	}`,
+	printFunction('theme', lines(fg(Color.Magenta, sayings.theme), '')),
+	printFunction('sudo', lines(fg(Color.Red, sayings.sudo), '')),
+	printFunction('q', lines(fg(Color.Yellow, sayings.exit), '')),
+	printFunction('clear', '\x1b[2J\x1b[H'),
+	`__site_prompt() {
+		site_status=$?
+		case "$PWD" in
+			/) site_pwd='~' ;;
+			*) site_pwd="~$PWD" ;;
+		esac
+		printf '%s%s%s' ${shellLiteral(boldFg(Color.Green, `${host.user}@${host.machine}`) + fg(Color.Dim, ':') + `\x1b[${Color.Blue}m`)} "$site_pwd" ${shellLiteral(RESET + fg(Color.Dim, '$ '))}
+		return "$site_status"
+	}`
+].join('\n');
 
 /**
  * Tab completion over the builtin list.

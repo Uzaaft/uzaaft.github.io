@@ -13,18 +13,17 @@
 	import {
 		bootOutput,
 		complete,
-		initialState,
-		prompt,
-		run,
-		type ShellState
+		RUSH_INIT_SCRIPT
 	} from '$lib/shell/commands';
 	import { CHIPS } from '$lib/shell/content';
+	import { parseShellOutput, type ShellUiEffect } from '$lib/shell/effects';
 	import { beginSession, type Session } from '$lib/shell/session';
 	import { parseTranscript, type Transcript } from '$lib/shell/transcript';
 	import { renderTrainFrame, TRAIN_WIDTH } from '$lib/shell/train';
 	import type { CanvasRenderer, Theme } from '$lib/vt/canvas-renderer';
 	import type { GridSnapshot, VtTerminal } from '$lib/vt/terminal';
 	import TerminalTranscript from '$lib/vt/terminal-transcript.svelte';
+	import type { RushShell } from '$lib/rush/module';
 
 	const FONT = {
 		family: "'JetBrains Mono', ui-monospace, monospace",
@@ -66,8 +65,9 @@
 
 	/** Non-reactive engine state: mutating these must never trigger a re-render. */
 	let terminal: VtTerminal | null = null;
+	let rush: RushShell | null = null;
 	let renderer: CanvasRenderer | null = null;
-	let shell: ShellState = initialState;
+	let currentPrompt = '';
 	let line = $state('');
 	let history: string[] = [];
 	let historyIndex = -1;
@@ -134,9 +134,8 @@
 	}
 
 	function submit(raw: string): void {
-		if (!terminal) {
+		if (!terminal || !rush) {
 			if (raw.trim()) {
-				history = [raw.trim(), ...history].slice(0, 50);
 				queued.push(raw);
 			}
 			historyIndex = -1;
@@ -148,31 +147,52 @@
 		live = true;
 		write(raw + CRLF);
 
-		const result = run(raw, shell);
-		shell = result.state;
-
-		if (result.effect.kind === 'clear') {
-			write(CLEAR);
-			announce('Terminal cleared.');
-		} else if (result.effect.kind === 'train') {
-			announce('Steam locomotive animation playing.');
-			startTrain();
-		} else {
-			write(result.effect.output);
-			announceOutput(raw, result.effect.output);
-			if (result.effect.kind === 'open') {
-				window.open(result.effect.url, '_blank', 'noopener,noreferrer');
-			}
+		const evaluated = rush.evaluate(raw);
+		if (evaluated._tag === 'err') {
+			failure = evaluated.error.message;
+			return;
 		}
+		const parsed = parseShellOutput(evaluated.value.stdout + evaluated.value.stderr);
+		write(toVtBytes(parsed.bytes));
+		announceOutput(raw, parsed.bytes);
 
 		if (raw.trim()) {
 			history = [raw.trim(), ...history].slice(0, 50);
 		}
 		historyIndex = -1;
 		line = '';
-		if (result.effect.kind === 'train') return;
-		write(prompt(shell));
+		if (!refreshPrompt()) return;
+
+		for (const effect of parsed.effects) applyUiEffect(effect);
+		if (parsed.effects.some((effect) => effect.kind === 'train')) return;
+
+		write(currentPrompt);
 		schedule();
+	}
+
+	function toVtBytes(output: string): string {
+		return output.replace(/\r?\n/g, CRLF);
+	}
+
+	function refreshPrompt(): boolean {
+		if (!rush) return false;
+		const evaluated = rush.evaluate('__site_prompt');
+		if (evaluated._tag === 'err') {
+			failure = evaluated.error.message;
+			return false;
+		}
+		currentPrompt = evaluated.value.stdout;
+		return true;
+	}
+
+	function applyUiEffect(effect: ShellUiEffect): void {
+		if (effect.kind === 'open') {
+			window.open(effect.url, '_blank', 'noopener,noreferrer');
+			return;
+		}
+
+		announce('Steam locomotive animation playing.');
+		startTrain();
 	}
 
 	/** Play `sl` in an alternate screen, then restore the untouched transcript. */
@@ -190,7 +210,7 @@
 
 		const finish = (): void => {
 			trainTimer = undefined;
-			write(SHOW_CURSOR + LEAVE_ALTERNATE_SCREEN + prompt(shell));
+			write(SHOW_CURSOR + LEAVE_ALTERNATE_SCREEN + currentPrompt);
 			schedule(true);
 			interactive = true;
 			announce('Steam locomotive animation finished.');
@@ -234,7 +254,7 @@
 				return;
 			}
 			live = true;
-			write(CLEAR + prompt(shell));
+			write(CLEAR + currentPrompt);
 			schedule(true);
 			return;
 		}
@@ -257,7 +277,7 @@
 				}
 				live = true;
 				write(
-					line + CRLF + completion.matches.join('  ') + CRLF + prompt(shell)
+					line + CRLF + completion.matches.join('  ') + CRLF + currentPrompt
 				);
 				schedule();
 			}
@@ -293,7 +313,8 @@
 		if (cleaned !== line) line = cleaned;
 	}
 
-	function runChip(command: string): void {		if (!interactive) return;
+	function runChip(command: string): void {
+		if (!interactive) return;
 		line = command;
 		submit(command);
 		captureEl?.focus();
@@ -391,20 +412,33 @@
 			return;
 		}
 
-		const [{ CanvasRenderer: Renderer }, { VtModule }, { VtTerminal: Terminal }] =
+		const [
+			{ CanvasRenderer: Renderer },
+			{ VtModule },
+			{ VtTerminal: Terminal },
+			{ RushModule }
+		] =
 			await Promise.all([
 				import('$lib/vt/canvas-renderer'),
 				import('$lib/vt/module'),
 				import('$lib/vt/terminal'),
+				import('$lib/rush/module'),
 				document.fonts
 					.load(`${FONT.sizePx}px ${FONT.family}`)
 					.catch(() => undefined)
 			]);
 		if (disposed) return;
 
-		const loaded = await VtModule.load(`${base}/ghostty-vt.wasm`);
-		if (loaded._tag === 'err') {
-			failure = loaded.error.message;
+		const [loadedVt, loadedRush] = await Promise.all([
+			VtModule.load(`${base}/ghostty-vt.wasm`),
+			RushModule.load(`${base}/rush.wasm`)
+		]);
+		if (loadedVt._tag === 'err') {
+			failure = loadedVt.error.message;
+			return;
+		}
+		if (loadedRush._tag === 'err') {
+			failure = loadedRush.error.message;
 			return;
 		}
 		if (disposed) return;
@@ -415,7 +449,7 @@
 			surfaceEl.getBoundingClientRect().height
 		);
 
-		const created = Terminal.create(loaded.value, initial.cols, initial.rows);
+		const created = Terminal.create(loadedVt.value, initial.cols, initial.rows);
 		if (created._tag === 'err') {
 			failure = created.error.message;
 			return;
@@ -426,6 +460,24 @@
 		}
 
 		terminal = created.value;
+		const createdRush = loadedRush.value.createShell();
+		if (createdRush._tag === 'err') {
+			terminal.dispose();
+			terminal = null;
+			failure = createdRush.error.message;
+			return;
+		}
+		rush = createdRush.value;
+		const initialized = rush.evaluate(RUSH_INIT_SCRIPT);
+		if (initialized._tag === 'err') {
+			failure = initialized.error.message;
+			return;
+		}
+		if (initialized.value.status !== 0) {
+			failure = initialized.value.stderr || 'Rush could not load the site commands.';
+			return;
+		}
+		if (!refreshPrompt()) return;
 		dims = `${initial.cols}×${initial.rows}`;
 		gridCols = initial.cols;
 		gridRows = initial.rows;
@@ -488,6 +540,8 @@
 			if (trainTimer !== undefined) window.clearTimeout(trainTimer);
 			terminal?.dispose();
 			terminal = null;
+			rush?.dispose();
+			rush = null;
 		};
 	});
 </script>
@@ -509,7 +563,7 @@
 		<div class="tab"><span class="dot"></span>uzaaft@bobr</div>
 		<div class="spacer"></div>
 		<div class="meta">
-			<span>libghostty-vt · wasm</span>
+			<span>rush · libghostty-vt · wasm</span>
 			<span class="pipe">|</span>
 			<span>{dims}</span>
 		</div>
