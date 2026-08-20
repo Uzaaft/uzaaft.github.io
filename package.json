@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"wasm": "nix build .#ghostty-vt-wasm -o result-wasm && install -m644 result-wasm/ghostty-vt.wasm static/ghostty-vt.wasm",
+		"wasm": "nix build .#ghostty-vt-wasm -o result-ghostty-wasm && nix build .#rush-wasm -o result-rush-wasm && install -m644 result-ghostty-wasm/ghostty-vt.wasm static/ghostty-vt.wasm && install -m644 result-rush-wasm/rush.wasm static/rush.wasm",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",

@@ -12,6 +12,13 @@
       flake = false;
     };
 
+    # Rush provides the persistent shell interpreter used by the terminal.
+    # Its wasm target captures stdout/stderr and keeps shell state in memory.
+    rush = {
+      url = "github:uzaaft/rush";
+      flake = false;
+    };
+
     # nixpkgs pin predates Zig 0.16, which ghostty requires.
     zig = {
       url = "github:mitchellh/zig-overlay";
@@ -26,6 +33,7 @@
     systems,
     nixpkgs,
     ghostty,
+    rush,
     zig,
     ...
   } @ inputs: let
@@ -53,6 +61,27 @@
               '')
               entries}
           '';
+      };
+
+      # Fixed-output cache for Rush's build.zig.zon dependencies. The hash is
+      # maintained by Rush's own Nix package; only the Zig package is supplied
+      # here because this flake gets 0.16 from zig-overlay.
+      rushDeps = pkgs.stdenvNoCC.mkDerivation {
+        pname = "rush-wasm-deps";
+        version = "0-unstable-${builtins.substring 0 7 (rush.rev or "dirty")}";
+        src = rush;
+
+        nativeBuildInputs = [zigPkg];
+        dontInstall = true;
+
+        buildPhase = ''
+          mkdir -p "$out/tmp"
+          export ZIG_GLOBAL_CACHE_DIR="$out"
+          zig build --fetch --summary none
+        '';
+
+        outputHash = "sha256-Rpb0dEtm6Yq+5/Mg3RWvVzLH46NC1o/QvZL7jLYS9Vs=";
+        outputHashMode = "nar";
       };
     in rec {
       ghostty-vt-wasm = pkgs.stdenv.mkDerivation {
@@ -122,10 +151,47 @@
         };
       };
 
+      rush-wasm = pkgs.stdenv.mkDerivation {
+        pname = "rush-wasm";
+        version = "0-unstable-${builtins.substring 0 7 (rush.rev or "dirty")}";
+        src = rush;
+
+        nativeBuildInputs = [zigPkg];
+
+        dontConfigure = true;
+        doCheck = false;
+
+        buildPhase = ''
+          runHook preBuild
+
+          export ZIG_GLOBAL_CACHE_DIR="$TMPDIR/zig-cache"
+          mkdir -p "$ZIG_GLOBAL_CACHE_DIR"
+          ln -s ${rushDeps}/p "$ZIG_GLOBAL_CACHE_DIR/p"
+          zig build \
+            -Dtarget=wasm32-freestanding \
+            -Doptimize=ReleaseSmall
+
+          runHook postBuild
+        '';
+
+        installPhase = ''
+          runHook preInstall
+          install -Dm444 zig-out/bin/rush.wasm "$out/rush.wasm"
+          runHook postInstall
+        '';
+
+        meta = {
+          description = "Rush shell built for wasm32-freestanding";
+          homepage = "https://github.com/uzaaft/rush";
+        };
+      };
+
       default = pkgs.stdenv.mkDerivation {
         pname = "uzaaft-github-io";
         version = "0.0.1";
         src = ./.;
+
+        env.CI = "true";
 
         nativeBuildInputs = [
           pkgs.nodejs
@@ -148,6 +214,7 @@
           runHook preBuild
 
           install -m644 ${ghostty-vt-wasm}/ghostty-vt.wasm static/ghostty-vt.wasm
+          install -m644 ${rush-wasm}/rush.wasm static/rush.wasm
           pnpm build
 
           runHook postBuild

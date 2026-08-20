@@ -52,8 +52,25 @@
       "inputs": {
         "ghostty": "ghostty",
         "nixpkgs": "nixpkgs",
+        "rush": "rush",
         "systems": "systems",
         "zig": "zig"
+      }
+    },
+    "rush": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786821904,
+        "narHash": "sha256-ImCiHyFVZ45b42Au2uraWmuVHw8hdF5uoKTr7M5/0GA=",
+        "owner": "uzaaft",
+        "repo": "rush",
+        "rev": "4cf5c2cc6f3c0ad4f0998f121973f10a8f0039e0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "uzaaft",
+        "repo": "rush",
+        "type": "github"
       }
     },
     "systems": {
