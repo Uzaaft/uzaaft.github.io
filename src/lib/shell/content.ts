@@ -37,12 +37,12 @@ export const fetchRows: readonly { readonly label: string; readonly value: strin
 	{ label: 'Education', value: 'NMBU' }
 ];
 
-/** The original blog post, restored from the pre-terminal site. */
+/** The site's sole blog post for now. */
 export const BOBR_POST = {
 	slug: 'hello-world',
 	date: '2025-11-26',
-	title: 'Hello World',
-	description: 'Bobr',
+	title: 'Hello world!',
+	description: 'Hello world!',
 	tags: ['meta'],
 } as const;
 
