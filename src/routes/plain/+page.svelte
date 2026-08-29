@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { about, contactRows, now, posts, projects } from '$lib/shell/content';
+	import { about, BOBR_POST, contactRows, now, projects } from '$lib/shell/content';
 </script>
 
 <svelte:head>
@@ -48,15 +48,12 @@
 	</section>
 
 	<section aria-labelledby="writing-heading">
-		<h2 id="writing-heading">Recent writing</h2>
-		<ul>
-			{#each posts as post}
-				<li>
-					<span>{post.title}</span>
-					<span class="meta">{post.date} · {post.minutes}</span>
-				</li>
-			{/each}
-		</ul>
+		<h2 id="writing-heading">Blog</h2>
+		<article>
+			<h3>{BOBR_POST.title}</h3>
+			<p class="meta">{BOBR_POST.date} · {BOBR_POST.tags.join(', ')}</p>
+			<p>{BOBR_POST.description}</p>
+		</article>
 	</section>
 
 	<section aria-labelledby="contact-heading">

@@ -10,6 +10,7 @@ import type { PreviousLogin } from './session';
 import {
 	about,
 	BEAVER,
+	BOBR_POST,
 	COMMANDS,
 	contactRows,
 	fetchRows,
@@ -166,8 +167,7 @@ function listDirectory(cwd: string): string {
 		return lines(
 			...posts.map(
 				(post) =>
-					fg(Color.Dim, post.date + '-') +
-					fg(Color.Blue, post.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.md')
+					fg(Color.Blue, pad(`${post.slug}.md`, 22)) + fg(Color.Dim, post.date)
 			),
 			''
 		);
@@ -221,7 +221,6 @@ function readFile(name: string): string {
 const OPEN_TARGETS: Readonly<Record<string, string>> = {
 	github: urls.github,
 	linkedin: urls.linkedin,
-	blog: urls.blog,
 	crates: urls.crates,
 	astrocommunity: urls.astrocommunity,
 	bobrwm: 'https://github.com/bobrwm/bobrwm',
@@ -233,14 +232,16 @@ const shellLiteral = (value: string): string => `'${value.replaceAll("'", `'"'"'
 const printFunction = (name: string, output: string): string =>
 	`${name}() { printf '%s' ${shellLiteral(output)}; }`;
 
-const blogOutput = lines(
-	...posts.map(
-		(post) => fg(Color.Dim, post.date + '  ') + post.title + fg(Color.Dim, '   ' + post.minutes)
-	),
-	'',
-	fg(Color.Green, 'open blog') + fg(Color.Dim, ' to read them'),
-	''
-);
+const effectMarker = (kind: 'open' | 'train', payload = ''): string =>
+	`\x1b]777;uzaaft;${kind};${encodeURIComponent(payload)}\x07`;
+
+const blogOutput =
+	lines(
+		boldFg(Color.Yellow, `# ${BOBR_POST.title}`),
+		fg(Color.Dim, `${BOBR_POST.date} · ${BOBR_POST.tags.join(', ')}`),
+		'',
+		BOBR_POST.description,
+	);
 
 const projectsOutput = lines(
 	...projects.map(
@@ -251,9 +252,6 @@ const projectsOutput = lines(
 	),
 	''
 );
-
-const effectMarker = (kind: 'open' | 'train', payload = ''): string =>
-	`\x1b]777;uzaaft;${kind};${encodeURIComponent(payload)}\x07`;
 
 /** Rush source evaluated once to install the portfolio's virtual commands. */
 export const RUSH_INIT_SCRIPT = [
@@ -271,6 +269,7 @@ export const RUSH_INIT_SCRIPT = [
 	printFunction('sl', effectMarker('train')),
 	`cat() {
 		case "$1" in
+			hello-world.md|blog/hello-world.md|/blog/hello-world.md) printf '%s' ${shellLiteral(blogOutput)} ;;
 			about*) printf '%s' ${shellLiteral(readFile('about'))} ;;
 			now*) printf '%s' ${shellLiteral(readFile('now'))} ;;
 			contact*) printf '%s' ${shellLiteral(readFile('contact'))} ;;
@@ -285,6 +284,7 @@ export const RUSH_INIT_SCRIPT = [
 	printFunction('contact', contact()),
 	`open() {
 		case "$1" in
+			blog) printf '%s' ${shellLiteral(lines(fg(Color.Dim, 'the blog lives in this terminal; run ') + fg(Color.Green, 'blog'), ''))} ;;
 			${Object.entries(OPEN_TARGETS)
 				.map(
 					([target, url]) =>

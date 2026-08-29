@@ -190,7 +190,6 @@
 			window.open(effect.url, '_blank', 'noopener,noreferrer');
 			return;
 		}
-
 		announce('Steam locomotive animation playing.');
 		startTrain();
 	}
@@ -452,6 +451,17 @@
 		const created = Terminal.create(loadedVt.value, initial.cols, initial.rows);
 		if (created._tag === 'err') {
 			failure = created.error.message;
+			return;
+		}
+		const initiallyResized = created.value.resize(
+			initial.cols,
+			initial.rows,
+			Math.round(renderer.cell.width),
+			renderer.cell.height
+		);
+		if (initiallyResized._tag === 'err') {
+			created.value.dispose();
+			failure = initiallyResized.error.message;
 			return;
 		}
 		if (disposed) {
@@ -719,13 +729,16 @@
 
 	canvas {
 		display: block;
-		visibility: hidden;
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
 	}
 
 	/* Native command editor, positioned immediately after the VT prompt. */
 	.capture {
 		position: absolute;
-		z-index: 2;
+		z-index: 3;
 		right: 0;
 		box-sizing: border-box;
 		border: none;
@@ -750,6 +763,7 @@
 
 	.failure {
 		position: absolute;
+		z-index: 4;
 		inset: auto 16px 16px;
 		margin: 0;
 		font-size: 12px;

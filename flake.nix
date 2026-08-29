@@ -99,13 +99,14 @@
         # simd=true and targets the host, which is why we can't just reuse it.
         #
         # -Dvt-features compiles out the C API surface the site never calls
-        # (snapshot, formatter, selection, key/mouse encode, kitty graphics):
-        # roughly 30% of the binary. The kept set is exactly what
-        # src/lib/vt/module.ts validates at load: terminal lifecycle, vt_write,
-        # resize, render_state, grid_ref hyperlinks, and colors. If a future
-        # site feature needs a gated API (say ghostty_key_encoder_*), the build
+        # (snapshot, formatter, selection, key/mouse encode, and Kitty
+        # graphics). The kept set is exactly what src/lib/vt/module.ts
+        # validates at load: terminal
+        # lifecycle, vt_write, resize, render_state, grid_ref hyperlinks,
+        # colors. If a future site feature needs another gated API, the build
         # still succeeds but module.ts's export check fails loudly at startup;
-        # re-enable the matching feature here.
+        # re-enable the
+        # matching feature here.
         buildPhase = ''
           runHook preBuild
 

@@ -8,9 +8,9 @@ export const host = {
 export const urls = {
 	github: 'https://github.com/Uzaaft',
 	linkedin: 'https://www.linkedin.com/in/uzaaft',
-	blog: '/blog',
 	crates: 'https://crates.io/crates/libghostty-vt',
 	astrocommunity: 'https://github.com/AstroNvim/astrocommunity',
+	twitter: 'https://x.com/uzaaft',
 	email: 'mailto:hi@uzaaft.me'
 } as const;
 
@@ -37,19 +37,17 @@ export const fetchRows: readonly { readonly label: string; readonly value: strin
 	{ label: 'Education', value: 'NMBU' }
 ];
 
-export const posts: readonly {
-	readonly date: string;
-	readonly title: string;
-	readonly minutes: string;
-}[] = [
-	{ date: '2026-07-14', title: 'Reflow is the hard part', minutes: '6 min' },
-	{
-		date: '2026-05-02',
-		title: 'Binding a zero-dependency C library without losing your mind',
-		minutes: '11 min'
-	},
-	{ date: '2026-02-20', title: 'My neovim config is a build system now', minutes: '4 min' }
-];
+/** The original blog post, restored from the pre-terminal site. */
+export const BOBR_POST = {
+	slug: 'hello-world',
+	date: '2025-11-26',
+	title: 'Hello World',
+	description: 'Bobr',
+	tags: ['meta'],
+} as const;
+
+/** Published posts in reverse chronological order. */
+export const posts = [BOBR_POST] as const;
 
 export const projects: readonly {
 	readonly name: string;
@@ -76,9 +74,9 @@ export const helpEntries: readonly { readonly usage: string; readonly blurb: str
 	{ usage: 'sl', blurb: 'you meant ls, right?' },
 	{ usage: 'cd <dir>', blurb: 'projects · blog' },
 	{ usage: 'cat <file>', blurb: 'about.md · now.md · contact.md · .rushrc' },
-	{ usage: 'blog', blurb: 'recent writing' },
+	{ usage: 'blog', blurb: 'read the one post' },
 	{ usage: 'projects', blurb: 'open source' },
-	{ usage: 'open <x>', blurb: 'github · linkedin · blog · crates · email' },
+	{ usage: 'open <x>', blurb: 'github · linkedin · crates · email' },
 	{ usage: 'theme', blurb: 'about the colors' },
 	{ usage: 'clear', blurb: 'wipe the scrollback' }
 ];
@@ -104,7 +102,8 @@ export const contactRows: readonly {
 }[] = [
 	{ label: 'github', value: 'github.com/Uzaaft', uri: urls.github },
 	{ label: 'linkedin', value: 'linkedin.com/in/uzaaft', uri: urls.linkedin },
-	{ label: 'email', value: 'hi@uzaaft.me', uri: urls.email }
+	{ label: 'email', value: 'hi@uzaaft.me', uri: urls.email },
+	{ label: 'Twitter', value: 'x.com/uzaaft', uri: urls.twitter }
 ];
 
 export const sayings = {
