@@ -27,10 +27,8 @@ export interface VtExports {
 
 	readonly ghostty_wasm_alloc_opaque: () => number;
 	readonly ghostty_wasm_free_opaque: (ptr: number) => void;
-	readonly ghostty_wasm_alloc_u8_array: (len: number) => number;
-	readonly ghostty_wasm_free_u8_array: (ptr: number, len: number) => void;
-	readonly ghostty_wasm_alloc_usize: () => number;
-	readonly ghostty_wasm_free_usize: (ptr: number) => void;
+	readonly ghostty_wasm_alloc: (len: number) => number;
+	readonly ghostty_wasm_free: (ptr: number, len: number) => void;
 
 	readonly ghostty_terminal_new: (
 		allocator: number,
@@ -66,7 +64,6 @@ export interface VtExports {
 	readonly ghostty_render_state_update: (state: number, terminal: number) => number;
 	readonly ghostty_render_state_get: (state: number, data: number, out: number) => number;
 	readonly ghostty_render_state_set: (state: number, option: number, value: number) => number;
-	readonly ghostty_render_state_colors_get: (state: number, out: number) => number;
 	readonly ghostty_render_state_row_iterator_new: (state: number, out: number) => number;
 	readonly ghostty_render_state_row_iterator_free: (iterator: number) => void;
 	readonly ghostty_render_state_row_iterator_next: (iterator: number) => number;
@@ -83,10 +80,8 @@ const REQUIRED_EXPORTS: readonly (keyof VtExports)[] = [
 	'ghostty_type_json',
 	'ghostty_wasm_alloc_opaque',
 	'ghostty_wasm_free_opaque',
-	'ghostty_wasm_alloc_u8_array',
-	'ghostty_wasm_free_u8_array',
-	'ghostty_wasm_alloc_usize',
-	'ghostty_wasm_free_usize',
+	'ghostty_wasm_alloc',
+	'ghostty_wasm_free',
 	'ghostty_terminal_new',
 	'ghostty_terminal_free',
 	'ghostty_terminal_vt_write',
@@ -100,7 +95,6 @@ const REQUIRED_EXPORTS: readonly (keyof VtExports)[] = [
 	'ghostty_render_state_update',
 	'ghostty_render_state_get',
 	'ghostty_render_state_set',
-	'ghostty_render_state_colors_get',
 	'ghostty_render_state_row_iterator_new',
 	'ghostty_render_state_row_iterator_free',
 	'ghostty_render_state_row_iterator_next',
@@ -111,6 +105,8 @@ const REQUIRED_EXPORTS: readonly (keyof VtExports)[] = [
 	'ghostty_render_state_row_cells_next',
 	'ghostty_render_state_row_cells_get'
 ];
+
+const WASM32_USIZE_BYTES = 4;
 
 /** A field as described by `ghostty_type_json()`. */
 interface FieldLayout {
@@ -312,33 +308,33 @@ export class VtModule {
 	}
 
 	withUsizeOut<T>(body: (outPtr: number) => T): T {
-		const outPtr = this.exports.ghostty_wasm_alloc_usize();
+		const outPtr = this.exports.ghostty_wasm_alloc(WASM32_USIZE_BYTES);
 		try {
 			return body(outPtr);
 		} finally {
-			this.exports.ghostty_wasm_free_usize(outPtr);
+			this.exports.ghostty_wasm_free(outPtr, WASM32_USIZE_BYTES);
 		}
 	}
 
 	/** Copy `data` into linear memory for the duration of `body`. */
 	withBytes<T>(data: Uint8Array, body: (ptr: number, len: number) => T): T {
-		const ptr = this.exports.ghostty_wasm_alloc_u8_array(data.length);
+		const ptr = this.exports.ghostty_wasm_alloc(data.length);
 		try {
 			this.bytes(ptr, data.length).set(data);
 			return body(ptr, data.length);
 		} finally {
-			this.exports.ghostty_wasm_free_u8_array(ptr, data.length);
+			this.exports.ghostty_wasm_free(ptr, data.length);
 		}
 	}
 
 	/** Allocate a zeroed scratch struct of `size` bytes for the duration of `body`. */
 	withScratch<T>(size: number, body: (ptr: number) => T): T {
-		const ptr = this.exports.ghostty_wasm_alloc_u8_array(size);
+		const ptr = this.exports.ghostty_wasm_alloc(size);
 		try {
 			this.bytes(ptr, size).fill(0);
 			return body(ptr);
 		} finally {
-			this.exports.ghostty_wasm_free_u8_array(ptr, size);
+			this.exports.ghostty_wasm_free(ptr, size);
 		}
 	}
 }

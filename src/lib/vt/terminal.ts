@@ -229,18 +229,18 @@ export class VtTerminal {
 				renderState,
 				iterSlot,
 				cellsSlot,
-				e.ghostty_wasm_alloc_u8_array(scratchSize),
+				e.ghostty_wasm_alloc(scratchSize),
 				scratchSize,
-				e.ghostty_wasm_alloc_u8_array(styleSize),
+				e.ghostty_wasm_alloc(styleSize),
 				styleSize,
-				e.ghostty_wasm_alloc_u8_array(bufferSize),
+				e.ghostty_wasm_alloc(bufferSize),
 				bufferSize,
-				e.ghostty_wasm_alloc_u8_array(GRAPHEME_CAP),
-				e.ghostty_wasm_alloc_u8_array(pointSize),
+				e.ghostty_wasm_alloc(GRAPHEME_CAP),
+				e.ghostty_wasm_alloc(pointSize),
 				pointSize,
-				e.ghostty_wasm_alloc_u8_array(gridRefSize),
+				e.ghostty_wasm_alloc(gridRefSize),
 				gridRefSize,
-				e.ghostty_wasm_alloc_u8_array(HYPERLINK_CAP),
+				e.ghostty_wasm_alloc(HYPERLINK_CAP),
 				{
 					size: vt.fieldOffset('GhosttyStyle', 'size'),
 					bold: vt.fieldOffset('GhosttyStyle', 'bold'),
@@ -641,13 +641,13 @@ export class VtTerminal {
 		e.ghostty_render_state_row_iterator_free(this.vt.readPointer(this.iterSlot));
 		e.ghostty_wasm_free_opaque(this.cellsSlot);
 		e.ghostty_wasm_free_opaque(this.iterSlot);
-		e.ghostty_wasm_free_u8_array(this.hyperlinkPtr, HYPERLINK_CAP);
-		e.ghostty_wasm_free_u8_array(this.gridRefPtr, this.gridRefSize);
-		e.ghostty_wasm_free_u8_array(this.pointPtr, this.pointSize);
-		e.ghostty_wasm_free_u8_array(this.textPtr, GRAPHEME_CAP);
-		e.ghostty_wasm_free_u8_array(this.bufferPtr, this.bufferSize);
-		e.ghostty_wasm_free_u8_array(this.stylePtr, this.styleSize);
-		e.ghostty_wasm_free_u8_array(this.scratchPtr, this.scratchSize);
+		e.ghostty_wasm_free(this.hyperlinkPtr, HYPERLINK_CAP);
+		e.ghostty_wasm_free(this.gridRefPtr, this.gridRefSize);
+		e.ghostty_wasm_free(this.pointPtr, this.pointSize);
+		e.ghostty_wasm_free(this.textPtr, GRAPHEME_CAP);
+		e.ghostty_wasm_free(this.bufferPtr, this.bufferSize);
+		e.ghostty_wasm_free(this.stylePtr, this.styleSize);
+		e.ghostty_wasm_free(this.scratchPtr, this.scratchSize);
 		e.ghostty_render_state_free(this.renderState);
 		e.ghostty_terminal_free(this.terminal);
 	}

@@ -101,11 +101,12 @@
         # -Dvt-features compiles out the C API surface the site never calls
         # (snapshot, formatter, selection, key/mouse encode, and Kitty
         # graphics). The kept set is exactly what src/lib/vt/module.ts
-        # validates at load: terminal
-        # lifecycle, vt_write, resize, render_state, grid_ref hyperlinks,
-        # colors. If a future site feature needs another gated API, the build
-        # still succeeds but module.ts's export check fails loudly at startup;
-        # re-enable the
+        # validates at load: terminal lifecycle, vt_write, resize,
+        # render_state, and grid_ref hyperlinks.
+        # Render-state color access is part of render-state; the standalone
+        # color parsing and palette utilities are not needed. If a future site
+        # feature needs another gated API, the build still succeeds but
+        # module.ts's export check fails loudly at startup; re-enable the
         # matching feature here.
         buildPhase = ''
           runHook preBuild
@@ -118,21 +119,22 @@
             -Demit-lib-vt=true \
             -Dtarget=wasm32-freestanding \
             -Dsimd=false \
-            -Dvt-features=-all,+render-state,+grid-introspection,+color
+            -Dvt-features=-all,+render-state,+grid-introspection
 
           runHook postBuild
         '';
 
         # wasm-opt -Oz shaves ~11% off the zig linker output (mostly dead
-        # locals and CFG simplification LLVM leaves behind). The feature
-        # flags enumerate exactly what zig 0.16 emits for this target (see the
-        # target_features section of an unstripped build): --detect-features
+        # locals and CFG simplification LLVM leaves behind). --converge
+        # repeats the size pass until no further reduction is possible. The
+        # feature flags enumerate exactly what zig 0.16 emits for this target
+        # the target_features section of an unstripped build). --detect-features
         # finds nothing because release builds strip that section. If a zig
         # upgrade adds a feature, wasm-opt's validator fails the build loudly
         # rather than silently miscompiling; extend the list then.
         installPhase = ''
           runHook preInstall
-          wasm-opt -Oz \
+          wasm-opt -Oz --converge \
             --enable-bulk-memory \
             --enable-extended-const \
             --enable-multivalue \
@@ -194,17 +196,24 @@
 
         env.CI = "true";
 
+        # pnpm must be listed explicitly: the top-level pnpmConfigHook no
+        # longer propagates the pnpm binary, and buildPhase calls `pnpm build`.
         nativeBuildInputs = [
           pkgs.nodejs
-          pkgs.pnpm.configHook
+          pkgs.pnpm
+          pkgs.pnpmConfigHook
         ];
 
-        pnpmDeps = pkgs.pnpm.fetchDeps {
+        # fetcherVersion 4 is required here, not 3: pkgs.pnpm is pnpm 11 and
+        # the v3 fetcher output is rejected for pnpm >= 11. The hash changes
+        # with the fetcher version and with any pnpm major bump (store format),
+        # so regenerate it by rebuilding with pkgs.lib.fakeSha256.
+        pnpmDeps = pkgs.fetchPnpmDeps {
           pname = "uzaaft-github-io-pnpm-deps";
           src = ./.;
-          lockfile = ./pnpm-lock.yaml;
-          fetcherVersion = 2;
-          hash = "sha256-8E4Wzrya/+9vVHZw4AXvnR+tk7Avu7m+XomU39nWggU=";
+          pnpm = pkgs.pnpm;
+          fetcherVersion = 4;
+          hash = "sha256-EpQIvZcU4o31H/Zz9GHX+AQZOALMAvzBCBy4hsAQdaA=";
         };
 
         # The wasm is gitignored (generated, not committed), so it is absent
