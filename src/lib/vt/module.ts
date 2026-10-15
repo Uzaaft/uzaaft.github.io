@@ -132,9 +132,14 @@ function parseTypeLayout(raw: unknown): Result<TypeLayout, VtModuleIncompatible>
 		return err(new VtModuleIncompatible('ghostty_type_json() did not return an object'));
 	}
 
+	const types = (raw as { types?: unknown }).types;
+	if (typeof types !== 'object' || types === null) {
+		return err(new VtModuleIncompatible('ghostty_type_json() did not contain a types object'));
+	}
+
 	const layout: Record<string, StructLayout> = {};
 
-	for (const [structName, structRaw] of Object.entries(raw)) {
+	for (const [structName, structRaw] of Object.entries(types)) {
 		if (typeof structRaw !== 'object' || structRaw === null) continue;
 
 		const size = (structRaw as { size?: unknown }).size;
