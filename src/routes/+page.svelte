@@ -15,7 +15,7 @@
 		complete,
 		RUSH_INIT_SCRIPT
 	} from '$lib/shell/commands';
-	import { CHIPS } from '$lib/shell/content';
+	import { CHIPS, urls } from '$lib/shell/content';
 	import { parseShellOutput, type ShellUiEffect } from '$lib/shell/effects';
 	import { beginSession, type Session } from '$lib/shell/session';
 	import { parseTranscript, type Transcript } from '$lib/shell/transcript';
@@ -27,13 +27,12 @@
 
 	const FONT = {
 		family: "'JetBrains Mono', ui-monospace, monospace",
-		sizePx: 13.5,
+		sizePx: 14,
 		lineHeight: 1.6
 	};
 	const THEME: Theme = {
 		foreground: '#c5c8c6',
-		background: '#1d1f21',
-		cursor: '#f0c674'
+		background: '#1d1f21'
 	};
 	const DRAG_THRESHOLD_PX = 4;
 
@@ -568,17 +567,17 @@
 
 <a class="skip-link" href="#terminal-transcript">Skip to terminal transcript</a>
 
+<div class="desktop">
 <div class="shell">
 	<header>
-		<div class="tab"><span class="dot"></span>uzaaft@bobr</div>
-		<div class="spacer"></div>
-		<div class="meta">
-			<span>rush · libghostty-vt · wasm</span>
-			<span class="pipe">|</span>
-			<span>{dims}</span>
+		<div class="window-lights" aria-hidden="true">
+			<span></span><span></span><span></span>
 		</div>
+		<div class="window-title"><span class="dot"></span>uzaaft@bobr</div>
+		<span class="meta">{dims}</span>
 	</header>
 
+	<div class="viewport">
 	<div class="surface" bind:this={surfaceEl} role="presentation">
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
 		<TerminalTranscript
@@ -624,6 +623,7 @@
 			{/if}
 		</div>
 	</div>
+	</div>
 
 	<footer>
 		<span class="label">run:</span>
@@ -633,20 +633,49 @@
 			>
 		{/each}
 		<div class="spacer"></div>
-		<a class="plain-link" href={`${base}/plain`}>plain page</a>
 		<span class="hint" id="terminal-hint"
 			>tab completes · ↑ history · ctrl-l clears</span
 		>
 	</footer>
 </div>
+<div class="site-footer">
+	<span>rush · libghostty-vt · wasm</span>
+	<nav aria-label="Site links">
+		<a href={urls.github} target="_blank" rel="noopener noreferrer">github</a>
+		<a href={urls.email}>email</a>
+		<a class="plain-link" href={`${base}/plain`}>plain page</a>
+	</nav>
+</div>
+</div>
 
 <style>
-	.shell {
+	.desktop {
+		box-sizing: border-box;
+		height: 100vh;
+		height: 100dvh;
 		min-height: 100vh;
 		min-height: 100dvh;
+		padding: clamp(0px, calc((100vw - 640px) * 0.06), 34px)
+			clamp(0px, calc((100vw - 640px) * 0.08), 48px) 0;
 		display: flex;
 		flex-direction: column;
 		background: #131517;
+	}
+
+	.shell {
+		flex: 1;
+		min-height: 24rem;
+		width: 100%;
+		max-width: 1240px;
+		margin: 0 auto;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		background: #1d1f21;
+		border: 1px solid #2f3336;
+		border-radius: clamp(0px, calc((100vw - 640px) * 0.05), 12px);
+		overflow: hidden;
+		box-shadow: 0 40px 90px -30px rgb(0 0 0 / 60%);
 	}
 
 	.skip-link {
@@ -667,27 +696,42 @@
 
 	header {
 		flex-shrink: 0;
-		height: 38px;
-		background: #0f1113;
+		height: 40px;
+		background: #17191b;
 		border-bottom: 1px solid #23272a;
-		display: flex;
-		align-items: stretch;
-		padding: 0 10px;
-		gap: 2px;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		align-items: center;
+		padding: 0 14px;
+		gap: 12px;
 	}
 
-	.tab {
+	.window-lights {
+		display: flex;
+		gap: 8px;
+	}
+
+	.window-lights span {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: #cc6666;
+	}
+
+	.window-lights span:nth-child(2) {
+		background: #f0c674;
+	}
+
+	.window-lights span:nth-child(3) {
+		background: #b5bd68;
+	}
+
+	.window-title {
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 0 14px;
-		margin-top: 5px;
-		font-size: 11.5px;
-		color: #e8eaea;
-		background: #1d1f21;
-		border: 1px solid #23272a;
-		border-bottom: none;
-		border-radius: 7px 7px 0 0;
+		font-size: 12px;
+		color: #b4b8bb;
 	}
 
 	.dot {
@@ -703,28 +747,31 @@
 	}
 
 	.meta {
-		display: flex;
-		align-items: center;
-		gap: 14px;
+		justify-self: end;
 		font-size: 11px;
 		color: #8b9096;
 	}
 
-	.pipe {
-		color: #3a3f43;
+	.viewport {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		padding: 24px 30px 16px;
 	}
 
 	.surface {
 		position: relative;
 		flex: 1;
-		min-height: 18rem;
+		min-width: 0;
+		min-height: 0;
 		overflow: hidden;
 		background: #1d1f21;
 		cursor: text;
 	}
 
 	.surface:focus-within {
-		box-shadow: inset 0 0 0 2px #81a2be;
+		outline: 1px solid #81a2be;
+		outline-offset: 6px;
 	}
 
 	canvas {
@@ -752,7 +799,7 @@
 		color: #c5c8c6;
 		caret-color: #f0c674;
 		font:
-			13.5px/1 'JetBrains Mono',
+			14px/1 'JetBrains Mono',
 			ui-monospace,
 			monospace;
 	}
@@ -786,7 +833,7 @@
 		flex-shrink: 0;
 		background: #17191b;
 		border-top: 1px solid #23272a;
-		padding: 9px 14px;
+		padding: 10px 16px;
 		display: flex;
 		gap: 7px;
 		flex-wrap: wrap;
@@ -801,13 +848,18 @@
 
 	footer button {
 		font-family: inherit;
-		font-size: 11.5px;
-		color: #8b9096;
-		background: #1d1f21;
-		border: 1px solid #2a2e31;
-		border-radius: 5px;
-		padding: 5px 11px;
+		font-size: 12px;
+		color: #c5c8c6;
+		background: #23272a;
+		border: 1px solid #3a3f43;
+		border-bottom-width: 2px;
+		border-radius: 6px;
+		padding: 6px 11px;
 		cursor: pointer;
+	}
+
+	footer button:active:not(:disabled) {
+		transform: translateY(1px);
 	}
 
 	footer button:hover:not(:disabled) {
@@ -816,7 +868,7 @@
 	}
 
 	footer button:focus-visible,
-	.plain-link:focus-visible {
+	.site-footer a:focus-visible {
 		outline: 2px solid #f0c674;
 		outline-offset: 2px;
 	}
@@ -838,17 +890,37 @@
 		text-underline-offset: 2px;
 	}
 
+	.site-footer {
+		flex-shrink: 0;
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 1240px;
+		margin: 0 auto;
+		padding: 10px 4px;
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		font-size: 11px;
+		color: #8b9096;
+	}
+
+	.site-footer nav {
+		display: flex;
+		gap: 16px;
+	}
+
 	@media (max-width: 40rem) {
-		header {
-			height: auto;
-			min-height: 38px;
+		.viewport {
+			padding: 16px 12px;
 		}
 
-		.meta {
+		footer {
+			padding: 10px 12px;
+		}
+
+		.site-footer {
 			flex-wrap: wrap;
-			justify-content: flex-end;
-			gap: 4px 10px;
-			padding: 4px 0;
+			padding: 10px 12px;
 		}
 	}
 </style>

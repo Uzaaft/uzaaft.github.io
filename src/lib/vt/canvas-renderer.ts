@@ -14,7 +14,6 @@ import type { CellRun, GridSnapshot, Rgb } from './terminal';
 export interface Theme {
 	readonly foreground: string;
 	readonly background: string;
-	readonly cursor: string;
 }
 
 export interface FontSpec {
@@ -84,7 +83,6 @@ export function measureCell(ctx: CanvasRenderingContext2D, font: FontSpec): Cell
 export class CanvasRenderer {
 	private metrics: CellMetrics;
 	private ratio = 1;
-	private lastCursor: { x: number; y: number } | null = null;
 
 	constructor(
 		private readonly canvas: HTMLCanvasElement,
@@ -132,15 +130,10 @@ export class CanvasRenderer {
 	/**
 	 * Repaint. Rows are skipped unless dirty, unless `force` is set.
 	 *
-	 * The row the cursor just left is repainted even when libghostty does not
-	 * mark it dirty — moving the cursor changes no cell content, so without this
-	 * the old cursor block would smear across the grid.
+	 * The native command editor owns the caret; the canvas paints only output.
 	 */
 	draw(snapshot: GridSnapshot, force = false): void {
-		const cursorMoved =
-			this.lastCursor?.x !== snapshot.cursor?.x || this.lastCursor?.y !== snapshot.cursor?.y;
-
-		if (!force && snapshot.dirty === 'none' && !cursorMoved) return;
+		if (!force && snapshot.dirty === 'none') return;
 
 		const full = force || snapshot.dirty === 'full';
 		const { width, height } = this.metrics;
@@ -153,12 +146,8 @@ export class CanvasRenderer {
 
 		this.ctx.textBaseline = 'alphabetic';
 
-		const cursorRows = new Set<number>();
-		if (this.lastCursor) cursorRows.add(this.lastCursor.y);
-		if (snapshot.cursor) cursorRows.add(snapshot.cursor.y);
-
 		for (const line of snapshot.lines) {
-			const needed = full || line.dirty || cursorRows.has(line.y);
+			const needed = full || line.dirty;
 			if (!needed) continue;
 
 			const y = line.y * height;
@@ -172,12 +161,6 @@ export class CanvasRenderer {
 				this.drawRun(run, y, width, height);
 			}
 		}
-
-		if (snapshot.cursor) {
-			this.drawCursor(snapshot.cursor.x, snapshot.cursor.y, snapshot.cursor.shape);
-		}
-
-		this.lastCursor = snapshot.cursor ? { x: snapshot.cursor.x, y: snapshot.cursor.y } : null;
 	}
 
 	private drawRun(run: CellRun, y: number, cellWidth: number, cellHeight: number): void {
@@ -238,31 +221,6 @@ export class CanvasRenderer {
 
 		if (run.underline) {
 			this.ctx.fillRect(x, y + cellHeight - 2, run.text.length * cellWidth, 1);
-		}
-	}
-
-	private drawCursor(col: number, row: number, shape: string): void {
-		const { width, height } = this.metrics;
-		const x = col * width;
-		const y = row * height;
-
-		this.ctx.fillStyle = this.theme.cursor;
-
-		switch (shape) {
-			case 'bar':
-				this.ctx.fillRect(x, y, 2, height);
-				break;
-			case 'underline':
-				this.ctx.fillRect(x, y + height - 2, width, 2);
-				break;
-			case 'block-hollow':
-				this.ctx.strokeStyle = this.theme.cursor;
-				this.ctx.lineWidth = 1;
-				this.ctx.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1);
-				break;
-			default:
-				this.ctx.fillRect(x, y, width, height);
-				break;
 		}
 	}
 }

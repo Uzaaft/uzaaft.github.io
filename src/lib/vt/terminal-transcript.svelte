@@ -124,7 +124,7 @@
 		padding: 0;
 		overflow: hidden;
 		font:
-			13.5px/var(--cell-height) 'JetBrains Mono',
+			14px/var(--cell-height) 'JetBrains Mono',
 			ui-monospace,
 			monospace;
 		white-space: pre;
