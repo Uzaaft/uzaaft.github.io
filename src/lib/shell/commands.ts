@@ -232,7 +232,7 @@ const shellLiteral = (value: string): string => `'${value.replaceAll("'", `'"'"'
 const printFunction = (name: string, output: string): string =>
 	`${name}() { printf '%s' ${shellLiteral(output)}; }`;
 
-const effectMarker = (kind: 'open' | 'train', payload = ''): string =>
+const effectMarker = (kind: 'open' | 'train' | 'blog', payload = ''): string =>
 	`\x1b]777;uzaaft;${kind};${encodeURIComponent(payload)}\x07`;
 
 const blogOutput =
@@ -240,7 +240,7 @@ const blogOutput =
 		boldFg(Color.Yellow, `# ${BOBR_POST.title}`),
 		fg(Color.Dim, `${BOBR_POST.date} · ${BOBR_POST.tags.join(', ')}`),
 		'',
-		BOBR_POST.description,
+		...BOBR_POST.body,
 	);
 
 const projectsOutput = lines(
@@ -279,12 +279,12 @@ export const RUSH_INIT_SCRIPT = [
 			*) printf '%s%s%s' ${shellLiteral(`\x1b[${Color.Red}mcat: `)} "$1" ${shellLiteral(`: No such file or directory${RESET}${CRLF}${CRLF}`)} ;;
 		esac
 	}`,
-	printFunction('blog', blogOutput),
+	printFunction('blog', effectMarker('blog')),
 	printFunction('projects', projectsOutput),
 	printFunction('contact', contact()),
 	`open() {
 		case "$1" in
-			blog) printf '%s' ${shellLiteral(lines(fg(Color.Dim, 'the blog lives in this terminal; run ') + fg(Color.Green, 'blog'), ''))} ;;
+			blog) printf '%s' ${shellLiteral(effectMarker('blog'))} ;;
 			${Object.entries(OPEN_TARGETS)
 				.map(
 					([target, url]) =>

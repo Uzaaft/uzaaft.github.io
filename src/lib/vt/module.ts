@@ -37,6 +37,28 @@ export interface VtExports {
 		rows: number
 	) => number;
 	readonly ghostty_terminal_free: (terminal: number) => void;
+	readonly ghostty_terminal_set: (terminal: number, option: number, value: number) => number;
+	readonly ghostty_terminal_get: (terminal: number, data: number, out: number) => number;
+	readonly ghostty_kitty_graphics_get: (graphics: number, data: number, out: number) => number;
+	readonly ghostty_kitty_graphics_image: (graphics: number, id: number) => number;
+	readonly ghostty_kitty_graphics_image_get: (image: number, data: number, out: number) => number;
+	readonly ghostty_kitty_graphics_placement_iterator_new: (
+		allocator: number,
+		out: number
+	) => number;
+	readonly ghostty_kitty_graphics_placement_iterator_free: (iterator: number) => void;
+	readonly ghostty_kitty_graphics_placement_next: (iterator: number) => number;
+	readonly ghostty_kitty_graphics_placement_get: (
+		iterator: number,
+		data: number,
+		out: number
+	) => number;
+	readonly ghostty_kitty_graphics_placement_render_info: (
+		iterator: number,
+		image: number,
+		terminal: number,
+		out: number
+	) => number;
 	readonly ghostty_terminal_vt_write: (terminal: number, ptr: number, len: number) => void;
 	readonly ghostty_terminal_resize: (
 		terminal: number,
@@ -84,6 +106,16 @@ const REQUIRED_EXPORTS: readonly (keyof VtExports)[] = [
 	'ghostty_wasm_free',
 	'ghostty_terminal_new',
 	'ghostty_terminal_free',
+	'ghostty_terminal_set',
+	'ghostty_terminal_get',
+	'ghostty_kitty_graphics_get',
+	'ghostty_kitty_graphics_image',
+	'ghostty_kitty_graphics_image_get',
+	'ghostty_kitty_graphics_placement_iterator_new',
+	'ghostty_kitty_graphics_placement_iterator_free',
+	'ghostty_kitty_graphics_placement_next',
+	'ghostty_kitty_graphics_placement_get',
+	'ghostty_kitty_graphics_placement_render_info',
 	'ghostty_terminal_vt_write',
 	'ghostty_terminal_resize',
 	'ghostty_terminal_grid_ref',

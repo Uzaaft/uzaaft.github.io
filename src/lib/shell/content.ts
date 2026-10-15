@@ -41,9 +41,10 @@ export const fetchRows: readonly { readonly label: string; readonly value: strin
 export const BOBR_POST = {
 	slug: 'hello-world',
 	date: '2025-11-26',
-	title: 'Hello world!',
-	description: 'Hello world!',
-	tags: ['meta'],
+	title: 'Hello World',
+	description: 'Bobr',
+	body: ['![Bobr](/bobr.gif)'],
+	tags: ['meta']
 } as const;
 
 /** Published posts in reverse chronological order. */
@@ -74,7 +75,7 @@ export const helpEntries: readonly { readonly usage: string; readonly blurb: str
 	{ usage: 'sl', blurb: 'you meant ls, right?' },
 	{ usage: 'cd <dir>', blurb: 'projects · blog' },
 	{ usage: 'cat <file>', blurb: 'about.md · now.md · contact.md · .rushrc' },
-	{ usage: 'blog', blurb: 'read the one post' },
+	{ usage: 'blog', blurb: 'open the blog reader' },
 	{ usage: 'projects', blurb: 'open source' },
 	{ usage: 'open <x>', blurb: 'github · linkedin · crates · email' },
 	{ usage: 'theme', blurb: 'about the colors' },

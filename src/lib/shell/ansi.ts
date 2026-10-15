@@ -53,8 +53,7 @@ export const link = (uri: string, text: string): string =>
 	`${ESC}]8;;${uri}${STRING_TERMINATOR}${text}${ESC}]8;;${STRING_TERMINATOR}`;
 
 /** Bold + colored, the combination the prompt uses. */
-export const boldFg = (color: Color, text: string): string =>
-	`${ESC}[1;${color}m${text}${RESET}`;
+export const boldFg = (color: Color, text: string): string => `${ESC}[1;${color}m${text}${RESET}`;
 
 /** Clear the screen and home the cursor. */
 export const CLEAR = `${ESC}[2J${ESC}[H`;
@@ -81,14 +80,14 @@ export const CRLF = '\r\n';
 export const lines = (...items: readonly string[]): string => items.join(CRLF) + CRLF;
 
 /**
- * Strip CSI and OSC escape sequences, leaving plain text.
+ * Strip CSI, OSC, and APC escape sequences, leaving plain text.
  *
  * Used to prerender a readable transcript for crawlers and no-JS visitors,
- * who never get the canvas. Only handles CSI sequences, which is all this
- * shell emits, including OSC 8 hyperlinks.
+ * who never get the canvas. Includes OSC 8 hyperlinks and Kitty image data.
  */
 export const stripAnsi = (text: string): string =>
 	// eslint-disable-next-line no-control-regex -- matching escape sequences is the point
 	text
+		.replace(/\x1b_[\s\S]*?\x1b\\/g, '')
 		.replace(/\x1b\][\s\S]*?(?:\x07|\x1b\\)/g, '')
 		.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '');

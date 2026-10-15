@@ -50,7 +50,7 @@
 	<section aria-labelledby="writing-heading">
 		<h2 id="writing-heading">Blog</h2>
 		<article>
-			<h3>{BOBR_POST.title}</h3>
+			<h3><a href={`${base}/blog/${BOBR_POST.slug}`}>{BOBR_POST.title}</a></h3>
 			<p class="meta">{BOBR_POST.date} · {BOBR_POST.tags.join(', ')}</p>
 			<p>{BOBR_POST.description}</p>
 		</article>

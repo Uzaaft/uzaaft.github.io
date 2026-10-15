@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { afterNavigate, goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import {
@@ -10,11 +11,7 @@
 		SHOW_CURSOR,
 		stripAnsi
 	} from '$lib/shell/ansi';
-	import {
-		bootOutput,
-		complete,
-		RUSH_INIT_SCRIPT
-	} from '$lib/shell/commands';
+	import { bootOutput, complete, RUSH_INIT_SCRIPT } from '$lib/shell/commands';
 	import { CHIPS, urls } from '$lib/shell/content';
 	import { parseShellOutput, type ShellUiEffect } from '$lib/shell/effects';
 	import { beginSession, type Session } from '$lib/shell/session';
@@ -42,15 +39,23 @@
 	// only annotate <input> elements, so a textarea never gets the key icon.
 	let captureEl: HTMLTextAreaElement | undefined = $state();
 
-	let { data } = $props();
+	let { data, children } = $props();
+	const isBlog = $derived(data.isBlog);
+
+	afterNavigate(({ type }) => {
+		if (!isBlog) {
+			if (type !== 'enter') void startEngine();
+			captureEl?.focus();
+		}
+	});
 
 	let dims = $state('—');
 	/**
 	 * Colored boot card, prerendered so first paint does not wait on wasm.
 	 * Replaced by the live grid only after the first command.
 	 *
-	 * `untrack` because seeding once is the intent: the route is prerendered and
-	 * never re-navigated to, and after boot this belongs to the renderer.
+	 * Seed once: this layout persists across shell and blog navigation, and
+	 * after boot the transcript belongs to the renderer.
 	 */
 	let boot = $state<Transcript>(untrack(() => data.transcript));
 	let snapshot = $state<GridSnapshot | null>(null);
@@ -151,7 +156,9 @@
 			failure = evaluated.error.message;
 			return;
 		}
-		const parsed = parseShellOutput(evaluated.value.stdout + evaluated.value.stderr);
+		const parsed = parseShellOutput(
+			evaluated.value.stdout + evaluated.value.stderr
+		);
 		write(toVtBytes(parsed.bytes));
 		announceOutput(raw, parsed.bytes);
 
@@ -185,6 +192,10 @@
 	}
 
 	function applyUiEffect(effect: ShellUiEffect): void {
+		if (effect.kind === 'blog') {
+			void goto(`${base}/blog`);
+			return;
+		}
 		if (effect.kind === 'open') {
 			window.open(effect.url, '_blank', 'noopener,noreferrer');
 			return;
@@ -326,6 +337,7 @@
 
 	/** Click the chrome or transcript to type. Skip links, buttons, and drag-selects. */
 	function focusInputFromClick(event: MouseEvent): void {
+		if (isBlog) return;
 		if (!(event.target instanceof Element)) return;
 		if (event.target.closest('a, button, textarea')) return;
 		if (sawPointerDown) {
@@ -341,7 +353,7 @@
 	 * Reclaim it so you can just start typing.
 	 */
 	function onPageKeyDown(event: KeyboardEvent): void {
-		if (!interactive || !captureEl || captureEl.disabled) return;
+		if (isBlog || !interactive || !captureEl || captureEl.disabled) return;
 		if (document.activeElement === captureEl) return;
 		if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey)
 			return;
@@ -359,7 +371,7 @@
 	}
 
 	function fitToSurface(): void {
-		if (!renderer || !terminal || !surfaceEl) return;
+		if (isBlog || !renderer || !terminal || !surfaceEl) return;
 		const rect = surfaceEl.getBoundingClientRect();
 		const grid = renderer.resize(rect.width, rect.height);
 		const resized = terminal.resize(
@@ -390,6 +402,7 @@
 	}
 
 	function startEngine(): Promise<void> {
+		if (isBlog) return Promise.resolve();
 		engine ??= loadEngine();
 		return engine;
 	}
@@ -415,16 +428,15 @@
 			{ VtModule },
 			{ VtTerminal: Terminal },
 			{ RushModule }
-		] =
-			await Promise.all([
-				import('$lib/vt/canvas-renderer'),
-				import('$lib/vt/module'),
-				import('$lib/vt/terminal'),
-				import('$lib/rush/module'),
-				document.fonts
-					.load(`${FONT.sizePx}px ${FONT.family}`)
-					.catch(() => undefined)
-			]);
+		] = await Promise.all([
+			import('$lib/vt/canvas-renderer'),
+			import('$lib/vt/module'),
+			import('$lib/vt/terminal'),
+			import('$lib/rush/module'),
+			document.fonts
+				.load(`${FONT.sizePx}px ${FONT.family}`)
+				.catch(() => undefined)
+		]);
 		if (disposed) return;
 
 		const [loadedVt, loadedRush] = await Promise.all([
@@ -483,7 +495,8 @@
 			return;
 		}
 		if (initialized.value.status !== 0) {
-			failure = initialized.value.stderr || 'Rush could not load the site commands.';
+			failure =
+				initialized.value.stderr || 'Rush could not load the site commands.';
 			return;
 		}
 		if (!refreshPrompt()) return;
@@ -565,87 +578,93 @@
 
 <svelte:window onkeydown={onPageKeyDown} />
 
-<a class="skip-link" href="#terminal-transcript">Skip to terminal transcript</a>
+<a class="skip-link" href={isBlog ? '#blog-content' : '#terminal-transcript'}
+	>Skip to {isBlog ? 'blog content' : 'terminal transcript'}</a
+>
 
 <div class="desktop">
-<div class="shell">
-	<header>
-		<div class="window-lights" aria-hidden="true">
-			<span></span><span></span><span></span>
+	<div class="shell">
+		<header>
+			<div class="window-lights" aria-hidden="true">
+				<span></span><span></span><span></span>
+			</div>
+			<div class="window-title">
+				<span class="dot"></span>{isBlog ? '~/blog' : 'uzaaft@bobr'}
+			</div>
+			<span class="meta">{isBlog ? 'read only' : dims}</span>
+		</header>
+
+		<div class="terminal-mode" hidden={isBlog}>
+			<div class="viewport">
+				<div class="surface" bind:this={surfaceEl} role="presentation">
+					<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
+					<TerminalTranscript
+						{snapshot}
+						fallback={boot}
+						{cellWidth}
+						{cellHeight}
+						theme={THEME}
+					/>
+
+					<!-- Native editing keeps selection, mobile keyboards, and IME behavior. -->
+					<textarea
+						bind:this={captureEl}
+						bind:value={line}
+						onkeydown={onKeyDown}
+						oninput={stripPastedNewlines}
+						class="capture"
+						rows="1"
+						wrap="off"
+						disabled={!interactive}
+						style:left={`${caret.x * cellWidth}px`}
+						style:top={`${caret.y * cellHeight}px`}
+						style:height={`${cellHeight}px`}
+						style:line-height={`${cellHeight}px`}
+						spellcheck="false"
+						autocomplete="off"
+						autocapitalize="off"
+						data-1p-ignore
+						data-lpignore="true"
+						data-bwignore
+						data-form-type="other"
+						aria-label="Terminal command"
+						aria-describedby="terminal-hint"></textarea>
+
+					{#if failure}
+						<p class="failure" role="alert">{failure}</p>
+					{/if}
+
+					<div class="sr-only" aria-live="polite" aria-atomic="true">
+						{#if announcement}
+							{#key announcement.id}{announcement.text}{/key}
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<footer>
+				<span class="label">run:</span>
+				{#each CHIPS as chip (chip)}
+					<button onclick={() => runChip(chip)} disabled={!interactive}
+						>{chip}</button
+					>
+				{/each}
+				<div class="spacer"></div>
+				<span class="hint" id="terminal-hint"
+					>tab completes · ↑ history · ctrl-l clears</span
+				>
+			</footer>
 		</div>
-		<div class="window-title"><span class="dot"></span>uzaaft@bobr</div>
-		<span class="meta">{dims}</span>
-	</header>
-
-	<div class="viewport">
-	<div class="surface" bind:this={surfaceEl} role="presentation">
-		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
-		<TerminalTranscript
-			{snapshot}
-			fallback={boot}
-			{cellWidth}
-			{cellHeight}
-			theme={THEME}
-		/>
-
-		<!-- Native editing keeps selection, mobile keyboards, and IME behavior. -->
-		<textarea
-			bind:this={captureEl}
-			bind:value={line}
-			onkeydown={onKeyDown}
-			oninput={stripPastedNewlines}
-			class="capture"
-			rows="1"
-			wrap="off"
-			disabled={!interactive}
-			style:left={`${caret.x * cellWidth}px`}
-			style:top={`${caret.y * cellHeight}px`}
-			style:height={`${cellHeight}px`}
-			style:line-height={`${cellHeight}px`}
-			spellcheck="false"
-			autocomplete="off"
-			autocapitalize="off"
-			data-1p-ignore
-			data-lpignore="true"
-			data-bwignore
-			data-form-type="other"
-			aria-label="Terminal command"
-			aria-describedby="terminal-hint"
-		></textarea>
-
-		{#if failure}
-			<p class="failure" role="alert">{failure}</p>
-		{/if}
-
-		<div class="sr-only" aria-live="polite" aria-atomic="true">
-			{#if announcement}
-				{#key announcement.id}{announcement.text}{/key}
-			{/if}
-		</div>
+		{@render children()}
 	</div>
+	<div class="site-footer">
+		<span>rush · libghostty-vt · wasm</span>
+		<nav aria-label="Site links">
+			<a href={urls.github} target="_blank" rel="noopener noreferrer">github</a>
+			<a href={urls.email}>email</a>
+			<a class="plain-link" href={`${base}/plain`}>plain page</a>
+		</nav>
 	</div>
-
-	<footer>
-		<span class="label">run:</span>
-		{#each CHIPS as chip (chip)}
-			<button onclick={() => runChip(chip)} disabled={!interactive}
-				>{chip}</button
-			>
-		{/each}
-		<div class="spacer"></div>
-		<span class="hint" id="terminal-hint"
-			>tab completes · ↑ history · ctrl-l clears</span
-		>
-	</footer>
-</div>
-<div class="site-footer">
-	<span>rush · libghostty-vt · wasm</span>
-	<nav aria-label="Site links">
-		<a href={urls.github} target="_blank" rel="noopener noreferrer">github</a>
-		<a href={urls.email}>email</a>
-		<a class="plain-link" href={`${base}/plain`}>plain page</a>
-	</nav>
-</div>
 </div>
 
 <style>
@@ -757,6 +776,17 @@
 		min-height: 0;
 		display: flex;
 		padding: 24px 30px 16px;
+	}
+
+	.terminal-mode {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.terminal-mode[hidden] {
+		display: none;
 	}
 
 	.surface {

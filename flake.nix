@@ -99,15 +99,30 @@
         # simd=true and targets the host, which is why we can't just reuse it.
         #
         # -Dvt-features compiles out the C API surface the site never calls
-        # (snapshot, formatter, selection, key/mouse encode, and Kitty
-        # graphics). The kept set is exactly what src/lib/vt/module.ts
+        # (snapshot, formatter, selection, and key/mouse encode).
+        # The kept set is exactly what src/lib/vt/module.ts
         # validates at load: terminal lifecycle, vt_write, resize,
-        # render_state, and grid_ref hyperlinks.
+        # render_state, grid_ref hyperlinks, and Kitty image placement APIs.
         # Render-state color access is part of render-state; the standalone
         # color parsing and palette utilities are not needed. If a future site
         # feature needs another gated API, the build still succeeds but
         # module.ts's export check fails loudly at startup; re-enable the
         # matching feature here.
+        # This pin still force-disables KIP on wasm for an old timestamp
+        # dependency. Image generations now use a monotonic counter instead.
+        # Direct transmission needs no OS clock or filesystem. Use Ghostty's
+        # bundled Wuffs decoder for PNG rather than a synchronous JS callback.
+        postPatch = ''
+          substituteInPlace src/terminal/build_options.zig \
+            --replace-fail $'if (target.cpu.arch == .wasm32 and target.os.tag == .freestanding)\n            return false;' '_ = target;'
+          substituteInPlace src/terminal/kitty/graphics_image.zig \
+            --replace-fail '// Otherwise, the payload data is guaranteed to be a path.' \
+              'if (comptime builtin.os.tag == .freestanding) return error.UnsupportedMedium;'
+          substituteInPlace src/terminal/sys.zig \
+            --replace-fail 'if (build_options.artifact == .lib) break :png null;' \
+              '// This browser build includes Wuffs PNG decoding.'
+        '';
+
         buildPhase = ''
           runHook preBuild
 
@@ -119,7 +134,7 @@
             -Demit-lib-vt=true \
             -Dtarget=wasm32-freestanding \
             -Dsimd=false \
-            -Dvt-features=-all,+render-state,+grid-introspection
+            -Dvt-features=-all,+render-state,+grid-introspection,+kitty-graphics
 
           runHook postBuild
         '';

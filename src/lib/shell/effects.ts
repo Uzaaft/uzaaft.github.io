@@ -1,6 +1,7 @@
 /** A browser-only effect requested by a trusted site command running in Rush. */
 export type ShellUiEffect =
 	| { readonly kind: 'open'; readonly url: string }
+	| { readonly kind: 'blog' }
 	| { readonly kind: 'train' };
 
 /** Shell output with private OSC effect markers removed and decoded. */
@@ -9,7 +10,7 @@ export interface ShellOutput {
 	readonly effects: readonly ShellUiEffect[];
 }
 
-const EFFECT_MARKER = /\x1b\]777;uzaaft;(open|train);([^\x07]*)\x07/g;
+const EFFECT_MARKER = /\x1b\]777;uzaaft;(open|train|blog);([^\x07]*)\x07/g;
 
 /**
  * Decode the private OSC protocol emitted only by the installed site functions.
@@ -18,8 +19,8 @@ const EFFECT_MARKER = /\x1b\]777;uzaaft;(open|train);([^\x07]*)\x07/g;
 export function parseShellOutput(output: string): ShellOutput {
 	const effects: ShellUiEffect[] = [];
 	const bytes = output.replace(EFFECT_MARKER, (marker, kind: string, encoded: string) => {
-		if (kind === 'train') {
-			effects.push({ kind: 'train' });
+		if (kind === 'train' || kind === 'blog') {
+			effects.push({ kind });
 			return '';
 		}
 

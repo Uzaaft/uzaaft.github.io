@@ -9,7 +9,7 @@
  * no explicit color.
  */
 
-import type { CellRun, GridSnapshot, Rgb } from './terminal';
+import type { CellRun, GridSnapshot, ImagePlacement, Rgb, TerminalImage } from './terminal';
 
 export interface Theme {
 	readonly foreground: string;
@@ -42,10 +42,7 @@ const css = (color: Rgb): string => `rgb(${color.r} ${color.g} ${color.b})`;
  * Each entry maps a codepoint to the fraction of the cell to fill:
  * [x, y, width, height], plus an optional alpha for the shade characters.
  */
-const BLOCKS: ReadonlyMap<
-	string,
-	readonly [number, number, number, number, number]
-> = new Map([
+const BLOCKS: ReadonlyMap<string, readonly [number, number, number, number, number]> = new Map([
 	['█', [0, 0, 1, 1, 1]], // full block
 	['▀', [0, 0, 1, 0.5, 1]], // upper half
 	['▄', [0, 0.5, 1, 0.5, 1]], // lower half
@@ -83,6 +80,8 @@ export function measureCell(ctx: CanvasRenderingContext2D, font: FontSpec): Cell
 export class CanvasRenderer {
 	private metrics: CellMetrics;
 	private ratio = 1;
+	private hadImages = false;
+	private readonly imageCanvases = new WeakMap<TerminalImage, HTMLCanvasElement>();
 
 	constructor(
 		private readonly canvas: HTMLCanvasElement,
@@ -133,9 +132,11 @@ export class CanvasRenderer {
 	 * The native command editor owns the caret; the canvas paints only output.
 	 */
 	draw(snapshot: GridSnapshot, force = false): void {
-		if (!force && snapshot.dirty === 'none') return;
+		const imageFrame = snapshot.images.length > 0 || this.hadImages;
+		this.hadImages = snapshot.images.length > 0;
+		if (!force && !imageFrame && snapshot.dirty === 'none') return;
 
-		const full = force || snapshot.dirty === 'full';
+		const full = force || imageFrame || snapshot.dirty === 'full';
 		const { width, height } = this.metrics;
 		const cssWidth = this.canvas.width / this.ratio;
 
@@ -145,6 +146,13 @@ export class CanvasRenderer {
 		}
 
 		this.ctx.textBaseline = 'alphabetic';
+		this.ctx.save();
+		this.ctx.beginPath();
+		this.ctx.rect(0, 0, snapshot.cols * width, snapshot.rows * height);
+		this.ctx.clip();
+		for (const placement of snapshot.images) {
+			if (placement.z < -1073741824) this.drawImage(placement);
+		}
 
 		for (const line of snapshot.lines) {
 			const needed = full || line.dirty;
@@ -158,9 +166,64 @@ export class CanvasRenderer {
 			}
 
 			for (const run of line.runs) {
-				this.drawRun(run, y, width, height);
+				const background = run.inverse
+					? run.fg === null
+						? this.theme.foreground
+						: css(run.fg)
+					: run.bg === null
+						? null
+						: css(run.bg);
+				if (background !== null) {
+					this.ctx.fillStyle = background;
+					this.ctx.fillRect(run.x * width, y, run.text.length * width, height);
+				}
 			}
 		}
+		for (const placement of snapshot.images) {
+			if (placement.z >= -1073741824 && placement.z < 0) this.drawImage(placement);
+		}
+		for (const line of snapshot.lines) {
+			if (!full && !line.dirty) continue;
+			for (const run of line.runs) this.drawRun(run, line.y * height, width, height);
+		}
+		for (const placement of snapshot.images) {
+			if (placement.z >= 0) this.drawImage(placement);
+		}
+		this.ctx.restore();
+	}
+
+	private drawImage(placement: ImagePlacement): void {
+		const { image } = placement;
+		let source = this.imageCanvases.get(image);
+		if (!source) {
+			source = document.createElement('canvas');
+			source.width = image.width;
+			source.height = image.height;
+			const rgba = new Uint8ClampedArray(image.width * image.height * 4);
+			const channels = [3, 4, 0, 2, 1][image.format];
+			for (let pixel = 0; pixel < image.width * image.height; pixel++) {
+				const from = pixel * channels;
+				const to = pixel * 4;
+				rgba[to] = image.pixels[from];
+				rgba[to + 1] = channels >= 3 ? image.pixels[from + 1] : image.pixels[from];
+				rgba[to + 2] = channels >= 3 ? image.pixels[from + 2] : image.pixels[from];
+				rgba[to + 3] = channels === 4 || channels === 2 ? image.pixels[from + channels - 1] : 255;
+			}
+			source.getContext('2d')!.putImageData(new ImageData(rgba, image.width, image.height), 0, 0);
+			this.imageCanvases.set(image, source);
+		}
+		const { width, height } = this.metrics;
+		this.ctx.drawImage(
+			source,
+			placement.sourceX,
+			placement.sourceY,
+			placement.sourceWidth,
+			placement.sourceHeight,
+			placement.column * width + Math.min(placement.xOffset, Math.max(0, Math.round(width) - 1)),
+			placement.row * height + Math.min(placement.yOffset, Math.max(0, Math.round(height) - 1)),
+			placement.width,
+			placement.height
+		);
 	}
 
 	private drawRun(run: CellRun, y: number, cellWidth: number, cellHeight: number): void {
@@ -170,12 +233,6 @@ export class CanvasRenderer {
 		const resolvedFg = run.fg === null ? this.theme.foreground : css(run.fg);
 		const resolvedBg = run.bg === null ? null : css(run.bg);
 		const foreground = run.inverse ? (resolvedBg ?? this.theme.background) : resolvedFg;
-		const background = run.inverse ? resolvedFg : resolvedBg;
-
-		if (background !== null) {
-			this.ctx.fillStyle = background;
-			this.ctx.fillRect(x, y, run.text.length * cellWidth, cellHeight);
-		}
 
 		const weight = run.bold ? '700' : '400';
 		const style = run.italic ? 'italic ' : '';

@@ -93,6 +93,31 @@ export interface Cursor {
 	readonly shape: CursorShape;
 }
 
+/** Host-owned pixels: no borrowed WASM pointer survives a terminal write. */
+export interface TerminalImage {
+	readonly id: number;
+	readonly generation: bigint;
+	readonly width: number;
+	readonly height: number;
+	readonly format: number;
+	readonly pixels: Uint8Array;
+}
+
+export interface ImagePlacement {
+	readonly image: TerminalImage;
+	readonly column: number;
+	readonly row: number;
+	readonly xOffset: number;
+	readonly yOffset: number;
+	readonly width: number;
+	readonly height: number;
+	readonly sourceX: number;
+	readonly sourceY: number;
+	readonly sourceWidth: number;
+	readonly sourceHeight: number;
+	readonly z: number;
+}
+
 export interface GridSnapshot {
 	readonly cols: number;
 	readonly rows: number;
@@ -101,6 +126,7 @@ export interface GridSnapshot {
 	readonly background: Rgb;
 	readonly cursor: Cursor | null;
 	readonly lines: readonly GridRow[];
+	readonly images: readonly ImagePlacement[];
 }
 
 interface RunStyle {
@@ -128,6 +154,7 @@ const sameStyle = (a: RunStyle, b: RunStyle): boolean =>
 
 export class VtTerminal {
 	private disposed = false;
+	private readonly images = new Map<number, TerminalImage>();
 
 	private constructor(
 		private readonly vt: VtModule,
@@ -185,6 +212,16 @@ export class VtTerminal {
 		}
 		const terminal = vt.readPointer(termSlot);
 		e.ghostty_wasm_free_opaque(termSlot);
+
+		// kitty_graphics.h: nonzero storage enables direct RGB/RGBA KIP.
+		const imageCode = vt.withScratch(8, (ptr) => {
+			vt.view().setBigUint64(ptr, 64n * 1024n * 1024n, true);
+			return e.ghostty_terminal_set(terminal, 15, ptr);
+		});
+		if (imageCode !== GHOSTTY_SUCCESS) {
+			e.ghostty_terminal_free(terminal);
+			return err(new VtCallFailed('ghostty_terminal_set(KITTY_IMAGE_STORAGE_LIMIT)', imageCode));
+		}
 
 		const rsSlot = e.ghostty_wasm_alloc_opaque();
 		const rsCode = e.ghostty_render_state_new(0, rsSlot);
@@ -536,7 +573,101 @@ export class VtTerminal {
 		this.vt.bytes(this.scratchPtr, this.scratchSize).fill(0);
 		e.ghostty_render_state_set(this.renderState, OPTION_DIRTY, this.scratchPtr);
 
-		return ok({ cols, rows, dirty, foreground, background, cursor, lines });
+		const images = this.readImages();
+		return ok({
+			cols,
+			rows,
+			dirty,
+			foreground,
+			background,
+			cursor,
+			lines,
+			images
+		});
+	}
+
+	private readImages(): readonly ImagePlacement[] {
+		const vt = this.vt;
+		const e = vt.exports;
+		const placements: ImagePlacement[] = [];
+		const visible = new Set<number>();
+		const infoType = 'GhosttyKittyGraphicsPlacementRenderInfo';
+		vt.withOpaqueOut((slot) => {
+			if (e.ghostty_terminal_get(this.terminal, 30, slot) !== GHOSTTY_SUCCESS) return;
+			const graphics = vt.readPointer(slot);
+			if (e.ghostty_kitty_graphics_placement_iterator_new(0, slot) !== GHOSTTY_SUCCESS) return;
+			const iterator = vt.readPointer(slot);
+			try {
+				if (e.ghostty_kitty_graphics_get(graphics, 1, slot) !== GHOSTTY_SUCCESS) return;
+				vt.withScratch(vt.structSize(infoType), (info) => {
+					const field = (name: string) => info + vt.fieldOffset(infoType, name);
+					const u32 = (name: string) => vt.view().getUint32(field(name), true);
+					const placementValue = (key: number) => {
+						e.ghostty_kitty_graphics_placement_get(iterator, key, this.scratchPtr);
+						return this.readU32();
+					};
+					while (e.ghostty_kitty_graphics_placement_next(iterator)) {
+						const id = placementValue(1) >>> 0;
+						const handle = e.ghostty_kitty_graphics_image(graphics, id);
+						if (!handle) continue;
+						vt.view().setUint32(field('size'), vt.structSize(infoType), true);
+						if (
+							e.ghostty_kitty_graphics_placement_render_info(
+								iterator,
+								handle,
+								this.terminal,
+								info
+							) !== GHOSTTY_SUCCESS
+						)
+							continue;
+						if (!vt.view().getUint8(field('viewport_visible'))) continue;
+						const imageValue = (key: number) => {
+							e.ghostty_kitty_graphics_image_get(handle, key, this.scratchPtr);
+							return this.readU32();
+						};
+						e.ghostty_kitty_graphics_image_get(handle, 9, this.scratchPtr);
+						const generation = vt.view().getBigUint64(this.scratchPtr, true);
+						let image = this.images.get(id);
+						if (!image || image.generation !== generation) {
+							if (
+								e.ghostty_kitty_graphics_image_get(handle, 7, this.scratchPtr) !== GHOSTTY_SUCCESS
+							)
+								continue;
+							const ptr = this.readU32();
+							const length = imageValue(8);
+							image = {
+								id,
+								generation,
+								width: imageValue(3),
+								height: imageValue(4),
+								format: imageValue(5),
+								pixels: vt.bytes(ptr, length).slice()
+							};
+							this.images.set(id, image);
+						}
+						visible.add(id);
+						placements.push({
+							image,
+							column: vt.view().getInt32(field('viewport_col'), true),
+							row: vt.view().getInt32(field('viewport_row'), true),
+							xOffset: placementValue(4),
+							yOffset: placementValue(5),
+							width: u32('pixel_width'),
+							height: u32('pixel_height'),
+							sourceX: u32('source_x'),
+							sourceY: u32('source_y'),
+							sourceWidth: u32('source_width'),
+							sourceHeight: u32('source_height'),
+							z: placementValue(12) | 0
+						});
+					}
+				});
+			} finally {
+				e.ghostty_kitty_graphics_placement_iterator_free(iterator);
+			}
+		});
+		for (const id of this.images.keys()) if (!visible.has(id)) this.images.delete(id);
+		return placements.sort((a, b) => a.z - b.z || a.image.id - b.image.id);
 	}
 
 	private readCursor(): Cursor | null {
