@@ -9,7 +9,7 @@ test('the shipped Ghostty module can render styled terminal output', async () =>
 	try {
 		const { VtModule } = await server.ssrLoadModule('/src/lib/vt/module.ts');
 		const { VtTerminal } = await server.ssrLoadModule('/src/lib/vt/terminal.ts');
-		const wasm = await readFile(new URL('../../../static/ghostty-vt.wasm', import.meta.url));
+		const wasm = await readFile(new URL('./ghostty-vt.wasm', import.meta.url));
 		const loaded = await VtModule.load(`data:application/wasm;base64,${wasm.toString('base64')}`);
 		assert.equal(loaded._tag, 'ok');
 		const created = VtTerminal.create(loaded.value, 40, 6);

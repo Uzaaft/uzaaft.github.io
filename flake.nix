@@ -238,7 +238,7 @@
         buildPhase = ''
           runHook preBuild
 
-          install -m644 ${ghostty-vt-wasm}/ghostty-vt.wasm static/ghostty-vt.wasm
+          install -m644 ${ghostty-vt-wasm}/ghostty-vt.wasm src/lib/vt/ghostty-vt.wasm
           install -m644 ${rush-wasm}/rush.wasm static/rush.wasm
           pnpm build
 

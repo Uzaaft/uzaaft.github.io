@@ -74,7 +74,7 @@ jobs:
           chmod -R u+w dist
 
       - name: Verify the wasm shipped
-        run: test -s dist/ghostty-vt.wasm
+        run: test -n "$(find dist/_app/immutable/assets -name 'ghostty-vt.*.wasm' -size +0c -print -quit)"
 
       - uses: actions/configure-pages@v5
 

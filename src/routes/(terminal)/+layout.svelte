@@ -12,6 +12,7 @@
 		stripAnsi
 	} from '$lib/shell/ansi';
 	import { bootOutput, complete, RUSH_INIT_SCRIPT } from '$lib/shell/commands';
+	import ghosttyWasmUrl from '$lib/vt/ghostty-vt.wasm?url';
 	import { CHIPS, urls } from '$lib/shell/content';
 	import { parseShellOutput, type ShellUiEffect } from '$lib/shell/effects';
 	import { beginSession, type Session } from '$lib/shell/session';
@@ -440,7 +441,7 @@
 		if (disposed) return;
 
 		const [loadedVt, loadedRush] = await Promise.all([
-			VtModule.load(`${base}/ghostty-vt.wasm`),
+			VtModule.load(ghosttyWasmUrl),
 			RushModule.load(`${base}/rush.wasm`)
 		]);
 		if (loadedVt._tag === 'err') {
