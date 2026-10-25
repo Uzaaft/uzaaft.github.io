@@ -19,7 +19,7 @@
       flake = false;
     };
 
-    # nixpkgs pin predates Zig 0.16, which ghostty requires.
+    # Rush requires Zig 0.16; Ghostty requires Zig 0.17.
     zig = {
       url = "github:mitchellh/zig-overlay";
       inputs = {
@@ -44,23 +44,14 @@
   in {
     packages = eachSystem (pkgs: system: let
       zigPkg = zig.packages.${system}."0.16.0";
+      ghosttyZig = zig.packages.${system}."0.17.0";
 
       # zon2nix-generated fetchers for ghostty's build.zig.zon deps, so the
-      # zig build runs offline. The copy-farm override is ghostty's own
-      # workaround: zig's build runner computes paths lexically, so a symlink
-      # that resolves to a different depth breaks the build.
-      # See https://codeberg.org/ziglang/zig/issues/32121
+      # zig build runs offline. Upstream now copies packages into real
+      # directories, avoiding Zig's lexical path issue with symlink farms.
       ghosttyDeps = pkgs.callPackage "${ghostty}/build.zig.zon.nix" {
         name = "ghostty-vt-wasm-deps";
-        zig_0_16 = zigPkg;
-        linkFarm = name: entries:
-          pkgs.runCommand name {} ''
-            mkdir -p $out
-            ${pkgs.lib.concatMapStringsSep "\n" (e: ''
-                cp -rL ${e.path} $out/${e.name}
-              '')
-              entries}
-          '';
+        zig_0_17 = ghosttyZig;
       };
 
       # Fixed-output cache for Rush's build.zig.zon dependencies. The hash is
@@ -89,7 +80,7 @@
         version = "0-unstable-${builtins.substring 0 7 (ghostty.rev or "dirty")}";
         src = ghostty;
 
-        nativeBuildInputs = [zigPkg pkgs.binaryen];
+        nativeBuildInputs = [ghosttyZig pkgs.binaryen];
 
         dontConfigure = true;
         doCheck = false;
@@ -99,7 +90,8 @@
         # simd=true and targets the host, which is why we can't just reuse it.
         #
         # -Dvt-features compiles out the C API surface the site never calls
-        # (snapshot, formatter, selection, and key/mouse encode).
+        # (snapshot, formatter, selection, search, input encoding, color
+        # utilities, and the custom glyph protocol).
         # The kept set is exactly what src/lib/vt/module.ts
         # validates at load: terminal lifecycle, vt_write, resize,
         # render_state, grid_ref hyperlinks, and Kitty image placement APIs.
@@ -114,7 +106,7 @@
         # bundled Wuffs decoder for PNG rather than a synchronous JS callback.
         postPatch = ''
           substituteInPlace src/terminal/build_options.zig \
-            --replace-fail $'if (target.cpu.arch == .wasm32 and target.os.tag == .freestanding)\n            return false;' '_ = target;'
+            --replace-fail 'if (target.os.tag == .freestanding) return false;' '_ = target;'
           substituteInPlace src/terminal/kitty/graphics_image.zig \
             --replace-fail '// Otherwise, the payload data is guaranteed to be a path.' \
               'if (comptime builtin.os.tag == .freestanding) return error.UnsupportedMedium;'
@@ -142,8 +134,8 @@
         # wasm-opt -Oz shaves ~11% off the zig linker output (mostly dead
         # locals and CFG simplification LLVM leaves behind). --converge
         # repeats the size pass until no further reduction is possible. The
-        # feature flags enumerate exactly what zig 0.16 emits for this target
-        # the target_features section of an unstripped build). --detect-features
+        # feature flags enumerate what Zig emits for this target (see the
+        # target_features section of an unstripped build). --detect-features
         # finds nothing because release builds strip that section. If a zig
         # upgrade adds a feature, wasm-opt's validator fails the build loudly
         # rather than silently miscompiling; extend the list then.
@@ -173,8 +165,9 @@
         pname = "rush-wasm";
         version = "0-unstable-${builtins.substring 0 7 (rush.rev or "dirty")}";
         src = rush;
+        patches = [./nix/rush-shell-features.patch];
 
-        nativeBuildInputs = [zigPkg];
+        nativeBuildInputs = [zigPkg pkgs.binaryen];
 
         dontConfigure = true;
         doCheck = false;
@@ -187,14 +180,29 @@
           ln -s ${rushDeps}/p "$ZIG_GLOBAL_CACHE_DIR/p"
           zig build \
             -Dtarget=wasm32-freestanding \
-            -Doptimize=ReleaseSmall
+            -Doptimize=ReleaseSmall \
+            -Dshell-features=-history,-printf-float
 
           runHook postBuild
         '';
 
+        # The wasm embedding target already omits the native UI, SQLite,
+        # process execution, and job control. The custom patch also removes
+        # history/fc/z (history is owned by the site) and floating-point printf
+        # conversions. String/integer printf and the shell language stay intact.
         installPhase = ''
           runHook preInstall
-          install -Dm444 zig-out/bin/rush.wasm "$out/rush.wasm"
+          wasm-opt -Oz --converge \
+            --enable-bulk-memory \
+            --enable-extended-const \
+            --enable-multivalue \
+            --enable-mutable-globals \
+            --enable-nontrapping-float-to-int \
+            --enable-sign-ext \
+            --enable-simd \
+            --enable-call-indirect-overlong \
+            zig-out/bin/rush.wasm -o rush-opt.wasm
+          install -Dm444 rush-opt.wasm "$out/rush.wasm"
           runHook postInstall
         '';
 

@@ -1,0 +1,137 @@
+--- a/build.zig
++++ b/build.zig
+@@ -27,6 +27,33 @@
+     const build_config = b.addOptions();
+     build_config.addOption([]const u8, "version", version);
+
++    // Optional embedder features, enabled by default. Apply modifications in
++    // order, e.g. -Dshell-features=-all,+history.
++    var history = true;
++    var printf_float = true;
++    const features = b.option(
++        []const u8,
++        "shell-features",
++        "Comma-separated +/- features: all, history, printf-float (default: all)",
++    ) orelse "";
++    var tokens = std.mem.tokenizeAny(u8, features, ", ");
++    while (tokens.next()) |token| {
++        const enabled = token[0] != '-';
++        const name = if (token[0] == '-' or token[0] == '+') token[1..] else token;
++        if (std.mem.eql(u8, name, "all")) {
++            history = enabled;
++            printf_float = enabled;
++        } else if (std.mem.eql(u8, name, "history")) {
++            history = enabled;
++        } else if (std.mem.eql(u8, name, "printf-float")) {
++            printf_float = enabled;
++        } else {
++            std.debug.panic("unknown shell feature: {s}; expected all, history, printf-float", .{name});
++        }
++    }
++    build_config.addOption(bool, "shell_history", history);
++    build_config.addOption(bool, "printf_float", printf_float);
++
+     if (target.result.cpu.arch.isWasm()) {
+         addWasmArtifact(b, target, optimize, build_config, lto);
+         return;
+--- a/src/shell/builtin.zig
++++ b/src/shell/builtin.zig
+@@ -2,6 +2,7 @@
+
+ const std = @import("std");
+ const zig_builtin = @import("builtin");
++const build_config = @import("build_config");
+
+ const host = @import("../host.zig");
+ const history_mod = @import("command_history.zig");
+@@ -109,11 +110,9 @@
+     .{ "export", Definition{ .name = "export", .id = .export_, .kind = .special } },
+     .{ "exit", Definition{ .name = "exit", .id = .exit, .kind = .special } },
+     .{ "false", Definition{ .name = "false", .id = .false_, .kind = .regular } },
+-    .{ "fc", Definition{ .name = "fc", .id = .fc, .kind = .regular } },
+     .{ "fg", Definition{ .name = "fg", .id = .fg, .kind = .regular } },
+     .{ "getopts", Definition{ .name = "getopts", .id = .getopts, .kind = .regular } },
+     .{ "hash", Definition{ .name = "hash", .id = .hash, .kind = .regular } },
+-    .{ "history", Definition{ .name = "history", .id = .history, .kind = .regular } },
+     .{ "jobs", Definition{ .name = "jobs", .id = .jobs, .kind = .regular } },
+     .{ "kill", Definition{ .name = "kill", .id = .kill, .kind = .regular } },
+     .{ "local", Definition{ .name = "local", .id = .local, .kind = .regular } },
+@@ -137,8 +136,11 @@
+     .{ "unalias", Definition{ .name = "unalias", .id = .unalias, .kind = .regular } },
+     .{ "unset", Definition{ .name = "unset", .id = .unset, .kind = .special } },
+     .{ "wait", Definition{ .name = "wait", .id = .wait, .kind = .regular } },
++} ++ (if (build_config.shell_history) .{
++    .{ "fc", Definition{ .name = "fc", .id = .fc, .kind = .regular } },
++    .{ "history", Definition{ .name = "history", .id = .history, .kind = .regular } },
+     .{ "z", Definition{ .name = "z", .id = .z, .kind = .regular } },
+-});
++} else .{}));
+
+ pub const Registry = struct {
+     extensions: []const Definition = &.{},
+@@ -231,11 +233,11 @@
+         .echo => try evalEcho(shell, args),
+         .exit => evalExit(shell, args),
+         .false_ => .{ .status = 1 },
+-        .fc => try builtin_history.evalFc(shell, args),
++        .fc => if (build_config.shell_history) try builtin_history.evalFc(shell, args) else .{ .status = 127 },
+         .fg => try evalFg(shell, args),
+         .getopts => try evalGetopts(shell, args),
+         .hash => try evalHash(shell, args),
+-        .history => try builtin_history.evalHistory(shell, args),
++        .history => if (build_config.shell_history) try builtin_history.evalHistory(shell, args) else .{ .status = 127 },
+         .jobs => try evalJobs(shell, args),
+         .kill => try evalKill(shell, args),
+         .local => try evalLocal(shell, args),
+--- a/src/shell/eval.zig
++++ b/src/shell/eval.zig
+@@ -2,6 +2,7 @@
+
+ const std = @import("std");
+ const zig_builtin = @import("builtin");
++const build_config = @import("build_config");
+
+ const ast = @import("ast.zig");
+ const ast_copy = @import("ast_copy.zig");
+@@ -1829,7 +1830,7 @@
+             return evalDeclarationBuiltin(shell, definition.id, command.words[1..]);
+         }
+         if (definition.id == .cd) return evalCdBuiltin(shell, fields);
+-        if (definition.id == .z) return evalZBuiltin(shell, fields);
++        if (build_config.shell_history and definition.id == .z) return evalZBuiltin(shell, fields);
+         if (definition.id == .command) {
+             return evalCommandBuiltin(shell, fields, command.assignments, &redirections, &restore_redirections);
+         }
+@@ -2373,7 +2374,10 @@
+                 return evaluated;
+             },
+             .z => {
+-                const evaluated = try evalZBuiltin(shell, args[index..]);
++                const evaluated: result.EvalResult = if (build_config.shell_history)
++                    try evalZBuiltin(shell, args[index..])
++                else
++                    .{ .status = 127 };
+                 restoreVariables(shell, saved);
+                 restored_assignments = true;
+                 return evaluated;
+--- a/src/shell/printf.zig
++++ b/src/shell/printf.zig
+@@ -5,6 +5,7 @@
+ //! routing the resulting stdout/stderr bytes to the active execution frame.
+
+ const std = @import("std");
++const build_config = @import("build_config");
+ const printf_float = @import("printf_float.zig");
+ const printf_number = @import("printf_number.zig");
+
+@@ -343,6 +344,10 @@
+     arg: []const u8,
+ ) !bool {
+     if (isPrintfFloatSpec(spec.spec)) {
++        if (!build_config.printf_float) {
++            try printfDiagnostic(stderr, status, "floating-point conversions disabled");
++            return false;
++        }
+         try appendPrintfFloatConversion(allocator, stdout, stderr, status, spec, arg);
+         return true;
+     }

@@ -25,6 +25,12 @@ test('the shipped Ghostty module can render styled terminal output', async () =>
 		assert.equal(snapshot.value.cursor.x, 5);
 		assert.equal(snapshot.value.cursor.y, 1);
 
+		terminal.writeText('\r\n\x1b]8;;https://example.com/work\x07linked\x1b]8;;\x07 plain');
+		const linked = terminal.snapshot().value.lines[2].runs;
+		assert.equal(linked[0].text, 'linked');
+		assert.equal(linked[0].uri, 'https://example.com/work');
+		assert.equal(linked[1].uri, null);
+
 		// Direct, chunked KIP must produce real pixels, not just consume APCs.
 		assert.equal(terminal.resize(40, 6, 8, 20)._tag, 'ok');
 		const pixels = Buffer.from([
