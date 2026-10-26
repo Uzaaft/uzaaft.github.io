@@ -1,0 +1,11 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "uzaaft-me",
+	"compatibility_date": "2026-10-25",
+	"assets": {
+		"directory": "./build"
+	},
+	"routes": [
+		{ "pattern": "uzaaft.me", "custom_domain": true }
+	]
+}

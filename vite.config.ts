@@ -12,7 +12,7 @@ export default defineConfig({
 			},
 
 			// Fully static: the terminal is client-side, so every route
-			// prerenders and GitHub Pages serves the result. `strict` fails the
+			// prerenders and Cloudflare serves the result. `strict` fails the
 			// build if a route is ever added that cannot be prerendered.
 			adapter: adapter({
 				pages: 'build',

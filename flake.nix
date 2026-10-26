@@ -236,7 +236,7 @@
           src = ./.;
           pnpm = pkgs.pnpm;
           fetcherVersion = 4;
-          hash = "sha256-EpQIvZcU4o31H/Zz9GHX+AQZOALMAvzBCBy4hsAQdaA=";
+          hash = "sha256-jsQC+IhH4kmI1GfuWcCJHeb+1JHo1ShIZZsA2pYgPGk=";
         };
 
         # The wasm is gitignored (generated, not committed), so it is absent
@@ -252,8 +252,8 @@
 
           runHook postBuild
         '';
-        # adapter-static writes a servable tree (including CNAME and the wasm
-        # copied in by preBuild) straight to ./build.
+        # adapter-static writes a servable tree (including the wasm copied in
+        # during buildPhase) straight to ./build.
         installPhase = "mv build $out";
       };
     });
