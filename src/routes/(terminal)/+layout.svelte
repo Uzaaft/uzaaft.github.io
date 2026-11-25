@@ -2,6 +2,7 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
+	import River from '$lib/river/river.svelte';
 	import {
 		CLEAR,
 		CRLF,
@@ -275,7 +276,7 @@
 			return;
 		}
 
-		if (event.key === 'Tab') {
+		if (event.key === 'Tab' && !event.shiftKey) {
 			event.preventDefault();
 			const completion = complete(line);
 			if (completion.kind === 'single') {
@@ -340,6 +341,7 @@
 	function focusInputFromClick(event: MouseEvent): void {
 		if (isBlog) return;
 		if (!(event.target instanceof Element)) return;
+		if (!event.target.closest('.shell')) return;
 		if (event.target.closest('a, button, textarea')) return;
 		if (sawPointerDown) {
 			const dx = event.clientX - pointerOriginX;
@@ -584,6 +586,7 @@
 >
 
 <div class="desktop">
+	<River />
 	<div class="shell">
 		<header>
 			<div class="window-lights" aria-hidden="true">
@@ -652,7 +655,7 @@
 				{/each}
 				<div class="spacer"></div>
 				<span class="hint" id="terminal-hint"
-					>tab completes · ↑ history · ctrl-l clears</span
+					>tab completes · shift-tab navigates · ↑ history · ctrl-l clears</span
 				>
 			</footer>
 		</div>
@@ -670,20 +673,20 @@
 
 <style>
 	.desktop {
+		position: relative;
+		isolation: isolate;
 		box-sizing: border-box;
-		height: 100vh;
-		height: 100dvh;
 		min-height: 100vh;
-		min-height: 100dvh;
-		padding: clamp(0px, calc((100vw - 640px) * 0.06), 34px)
-			clamp(0px, calc((100vw - 640px) * 0.08), 48px) 0;
+		min-height: 100svh;
+		padding: 40px clamp(12px, 4vw, 64px) 180px;
 		display: flex;
 		flex-direction: column;
 		background: #131517;
 	}
 
 	.shell {
-		flex: 1;
+		position: relative;
+		height: max(34rem, calc(100svh - 256px));
 		min-height: 24rem;
 		width: 100%;
 		max-width: 1240px;
@@ -922,6 +925,7 @@
 	}
 
 	.site-footer {
+		position: relative;
 		flex-shrink: 0;
 		box-sizing: border-box;
 		width: 100%;
@@ -941,6 +945,14 @@
 	}
 
 	@media (max-width: 40rem) {
+		.desktop {
+			padding: 12px 8px 166px;
+		}
+
+		.shell {
+			height: max(32rem, calc(100svh - 234px));
+		}
+
 		.viewport {
 			padding: 16px 12px;
 		}
